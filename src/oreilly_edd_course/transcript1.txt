@@ -1,0 +1,48 @@
+Jan 9, 2026
+Engineering Team Standup - Jan 9, 2026 at 9:15 EST - Transcript
+
+00:00:00
+Sarah Chen: Okay everyone's here. Um, let's do quick standup. Marcus you wanna start?
+Marcus Rodriguez: Yeah yeah. So uh, yesterday I finally got that auth refactor merged to main.
+Sarah Chen: Nice.
+Marcus Rodriguez: Yeah took forever but it's done. Um, today I'm gonna work on the rate limiting feature for the API. But I'm kinda blocked because I need the Redis cluster details from DevOps.
+Alex Kim: Oh shoot, sorry man. I'll I'll send those over right after this call.
+Marcus Rodriguez: Yeah that would be
+Alex Kim: I'll also include the connection pooling config you'll need. Should have done that earlier.
+Marcus Rodriguez: Perfect. Thanks Alex.
+# Action Item 1: Alex Kim to send Redis cluster details and connection pooling config to Marcus Rodriguez
+
+00:00:45
+Sarah Chen: Cool. Priya, how's the dashboard?
+Priya Patel: Um, good. Good progress. I've got the new charts component done and it's ready for review. The PR is number 847.
+Sarah Chen: Okay.
+Priya Patel: I need someone to review it today though because I can't really move forward with integrating it into the main dashboard until that's done. And then tomorrow I'll be working on the export functionality but I'll need the final mockups from design before I can start that.
+Sarah Chen: Okay I'll ping the design team about those mockups. Marcus can you review Priya's PR by end of day?
+Marcus Rodriguez: Yep. I'll do it right after lunch.
+Priya Patel: Thanks.
+# Action Item 2: Sarah Chen to ping the design team about the mockups.
+# Action Item 3: Marcus Rodriguez to review Priya's PR by end of day.
+
+
+00:01:30
+Sarah Chen: Alex what's your update?
+Alex Kim: Uh yeah so yesterday we had some downtime issues with staging environment.
+Sarah Chen: Oh no.
+Alex Kim: Yeah. I identified it was a memory leak in the logging service. I've applied a hotfix but we need to do like a proper fix. Um, also I need to schedule a maintenance window for the database migration next week. Can everyone block off Wednesday afternoon?
+Sarah Chen: Um, let me check with product first. I'll confirm by tomorrow morning whether Wednesday works. What time were you thinking?
+Alex Kim: 2 PM to 4 PM EST should be enough.
+Sarah Chen: Okay. I'll get back to you tomorrow.
+# Action Item 4: Sarah Chen to confirm Wednesday works for Product.
+# Action Item 5: Alex Kim to schedule a maintenance window for the database migration.
+
+00:02:15
+Sarah Chen: Anything else from anyone?
+Priya Patel: Just one thing. Um, we should update our testing documentation. It's really outdated and the new engineers are getting confused.
+Sarah Chen: Yeah.
+Priya Patel: Should I take that on or should I assign it to someone?
+Sarah Chen: Can you just create a ticket for it and we'll discuss priority in our planning meeting? For now let's keep focus on the dashboard work.
+Priya Patel: Yeah okay. Will do.
+Sarah Chen: Alright. Thanks everyone. Let's have a great day.
+Marcus Rodriguez: Thanks.
+Alex Kim: See ya.
+# Action Item 6: Priya Patel to create a ticket for updating testing documentation.

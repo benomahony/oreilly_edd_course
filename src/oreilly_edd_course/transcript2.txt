@@ -1,0 +1,54 @@
+Jan 9, 2026
+Product Planning Meeting - Q1 Feature Roadmap - Jan 9, 2026 at 2:00 EST - Transcript
+
+00:00:00
+Jennifer Walsh: Okay everyone's here. Thanks for joining. Um, we need to finalize our Q1 roadmap today. Let's start with the big one, the analytics dashboard that enterprise customers have been requesting. Maya can you give us some context?
+Maya Johnson: Yeah absolutely. So we've had 15 enterprise accounts specifically ask for better analytics. They need to see usage trends, user engagement metrics, cost tracking, all in one place.
+Jennifer Walsh: Mhmm.
+Maya Johnson: Three of our largest customers have said this is critical for their renewal decisions in Q2. One even mentioned they're evaluating competitors because of this gap.
+Jennifer Walsh: Oh that's not good. Tom what's the engineering effort look like?
+
+00:01:00
+Tom Richardson: It's uh it's substantial. We'd need to instrument new tracking across the platform first. Probably two weeks of work. Then building the dashboard itself maybe three weeks. But here's the thing, our current database can't handle the query load for real-time analytics.
+Jennifer Walsh: Okay.
+Tom Richardson: We'd need to set up a data warehouse first.
+Kevin Martinez: I can help scope that out. I've been wanting to move us to a proper data warehouse anyway for our internal analytics. If we do this right it solves both problems. But we'll need to make some architectural decisions. Are we going with Snowflake, BigQuery, or building something custom?
+Tom Richardson: I'd lean toward BigQuery since we're already on GCP. Less operational overhead.
+Jennifer Walsh: Okay so Kevin you'll research the data warehouse options and come back with a recommendation by next Friday? Include cost estimates and migration timeline.
+Kevin Martinez: Yes I can do that. I'll also need to talk to finance about budget approval. Tom should we sync mid-week to discuss the technical integration points?
+Tom Richardson: Yeah let's do Wednesday afternoon. I'll need to bring in someone from my team who knows our data pipeline better. Probably Marcus.
+Jennifer Walsh: Great.
+
+00:02:30
+Jennifer Walsh: Now Lisa we need the UX designs for this dashboard. What's your bandwidth looking like?
+Lisa Anderson: Um I'm finishing up the mobile redesign next week so I could start on this the week after. But I'll need clear requirements first. What metrics are we actually showing? Are we doing custom dashboards per customer or a standard view? What level of drill down?
+Maya Johnson: I can work with our enterprise customers to gather specific requirements. I'll set up calls with the three I mentioned. Should have a requirements doc by next Wednesday.
+Lisa Anderson: Perfect. So I'm dependent on Maya's requirements doc before I can start. Once I have that I'd estimate two weeks for initial designs then another week for revisions after feedback. We should also think about user testing with actual customers.
+Jennifer Walsh: Good point. Maya can you also coordinate getting two or three customers for a user testing session once we have initial designs?
+Maya Johnson: Absolutely. I'll line them up in advance so we're ready to go.
+
+00:03:45
+Jennifer Walsh: Tom what else does engineering need to deliver this?
+Tom Richardson: Well aside from the data warehouse we need to update our instrumentation library. It's outdated and doesn't capture some of the events we'll need. That's a prerequisite for everything else. We should also consider whether we want to build this as a separate microservice or integrate it into the main app. A separate service might be cleaner but adds operational complexity.
+Kevin Martinez: From an analytics perspective a separate service makes sense. It keeps the query load isolated.
+Tom Richardson: Okay then we'll need to provision infrastructure for it too. And set up proper monitoring and alerting. This is starting to feel like a pretty big project.
+Jennifer Walsh: It is but it's critical for retention. Let me break down what I'm hearing. Phase one is the data warehouse migration and updated instrumentation. Phase two is building the dashboard service itself. Phase three is the frontend dashboard with Lisa's designs. Does that sequencing make sense?
+Tom Richardson: Yeah that works. The instrumentation can happen in parallel with the data warehouse work actually. Once both are done we can build the dashboard service and once that's ready the frontend can connect to it.
+
+00:05:00
+Jennifer Walsh: Okay so Tom you need to create detailed technical specs for the instrumentation updates and the dashboard service architecture. When can you have those ready?
+Tom Richardson: Um I'll need to involve my team. Give me two weeks to get those specs written and reviewed internally.
+Jennifer Walsh: That's gonna push our timeline. Can you do it in one week if you make it a priority?
+Tom Richardson: Let me check with my team but probably yes. I'll confirm by end of day tomorrow.
+Jennifer Walsh: Please do. And one more thing we need to think about how this impacts our other Q1 priorities. Lisa you mentioned the mobile redesign. Is that blocking anything else?
+Lisa Anderson: The mobile checkout flow improvement depends on it. That was supposed to be our big conversion optimization play for Q1.
+Jennifer Walsh: Right. So we might need to push that to Q2. Let me talk to leadership about reprioritizing. Everyone until we get confirmation on priorities assume the analytics dashboard is the top priority but keep working on your current commitments. I'll send out a final decision by Monday.
+
+00:06:15
+Jennifer Walsh: Last question. Who's gonna own the project management for this? It's cross functional and complex.
+Tom Richardson: We usually have eng leads do it but honestly I'm stretched thin. Could product take the lead on coordination?
+Jennifer Walsh: I can do the high level coordination but I'll need someone from engineering to manage the technical dependencies and track the development progress.
+Tom Richardson: I can assign someone. Let me think about who has capacity and I'll let you know by Friday.
+Jennifer Walsh: Okay. Um let me recap the action items so we're all clear. Kevin you're researching data warehouse options with cost estimates by next Friday. Tom and Kevin sync Wednesday afternoon with Marcus on technical integration. Maya you're gathering requirements from enterprise customers by next Wednesday. Maya you're also lining up customers for user testing. Lisa you start designs once you have Maya's requirements. Tom you're creating technical specs in one week if possible, confirming tomorrow. Tom you're also assigning a PM for technical tracking by Friday. And I'm talking to leadership about Q1 priorities sending decision by Monday. Did I miss anything?
+Tom Richardson: Nope that covers it.
+Jennifer Walsh: Alright. Thanks everyone.
