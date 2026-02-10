@@ -5,7 +5,12 @@ description = "Add your description here"
 readme = "README.md"
 authors = [{ name = "benomahony", email = "ben.omahony@thoughtworks.com" }]
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "pydantic>=2.12.5",
+    "pydantic-ai>=1.56.0",
+    "pydantic-evals>=1.56.0",
+    "rich>=14.3.2",
+]
 
 [build-system]
 requires = ["hatchling"]

@@ -1,4 +1,4 @@
-Jan 9, 2026
+Feb 9, 2026
 Client Onboarding Call - Vertex Systems - Jan 9, 2026 at 3:30 EST - Transcript
 
 00:00:00
@@ -33,33 +33,3 @@ David Park: That's typically a collaborative effort. You know your data best so 
 Amanda Chen: Okay so I'll need to audit our custom fields and document what they're used for. That's gonna take me some time. Robert can you help with that? You know the IT side better.
 Robert Park: Sure but I'll need access to your Jira instance to see all the configurations. I don't currently have admin access.
 Amanda Chen: Oh right I'll request that for you today. Should have it by tomorrow.
-
-00:04:50
-Rachel Foster: This is great progress. Um let me make sure I'm capturing everything. Robert you're getting the Okta attribute schema to David. Amanda you're talking to the marketing PM about using their project for testing. Robert's getting admin access to Jira. And then together you two are documenting the field mappings. Does that cover the immediate next steps?
-Robert Park: Yes though I'm also wondering about our reporting requirements. We have some pretty complex executive dashboards that we built in Jira. Can your platform support those?
-David Park: Our reporting is pretty flexible but I'd need to see what you currently have. Can you export some examples or share screenshots of your key reports?
-Robert Park: I can do that. When do you need them by?
-David Park: Sooner is better but if you can get them to me by next Wednesday that gives me time to review before our test migration starts.
-Amanda Chen: Robert let's prioritize the top five reports that executives actually look at not all 50 reports we've created over the years.
-Robert Park: Ha good call. I'll pull those together.
-
-00:06:00
-Rachel Foster: Amanda one more thing. You mentioned your executive team is expecting results by end of Q1. What does results mean to them specifically? Are they looking for full adoption across all teams or certain metrics or what?
-Amanda Chen: They want to see improved project visibility and faster delivery cycles. Specifically they want to see our cycle time metrics trending downward and better visibility into project status across the organization. We've been flying blind with our current tools.
-David Park: Got it. So we'll want to make sure we're tracking the right metrics from day one. That means we should configure your dashboards and reporting during the initial setup not as an afterthought. Rachel should we schedule a separate session to define those metrics and KPIs?
-Rachel Foster: Yes let's do that. Amanda Robert what's your availability next week for a metrics and KPI discussion? We'd probably need an hour.
-Amanda Chen: I'm pretty open Tuesday or Thursday afternoon.
-Robert Park: Thursday works better for me.
-Rachel Foster: Thursday at 2 PM then? I'll send a calendar invite and we'll make sure we have the right people from our side on the call. Probably someone from our customer success team who specializes in metrics.
-Amanda Chen: Sounds good.
-
-00:07:20
-Amanda Chen: And just to confirm you're gonna send us some documentation about best practices for field mapping and data migration? I want to make sure we're doing this right.
-Rachel Foster: Absolutely. David can you send over our migration guide and field mapping template?
-David Park: Yep I'll send that over today along with links to our knowledge base articles on SSO configuration.
-Rachel Foster: Perfect. I think we have a solid plan. Let me just confirm the timeline one more time. This week Robert gets Okta schema Amanda talks to marketing PM Robert gets Jira admin access. Next week Amanda and Robert document field mappings Robert sends key reports to David we meet Thursday for metrics discussion. Week after next David starts test migration. Does that work for everyone?
-Amanda Chen: Yes assuming we don't hit any surprises with the Okta integration or field mapping complexity.
-David Park: And I'll flag any issues as soon as I see them so we can adjust the plan if needed.
-Rachel Foster: Great. Amanda Robert thank you again. We're committed to making this work within your timeline. Don't hesitate to reach out if you have questions or concerns.
-Amanda Chen: Thank you both. Talk soon.
-Robert Park: Thanks.
