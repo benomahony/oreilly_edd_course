@@ -10,7 +10,8 @@ Alex Kim: Oh shoot, sorry man. I'll I'll send those over right after this call.
 Marcus Rodriguez: Yeah that would be
 Alex Kim: I'll also include the connection pooling config you'll need. Should have done that earlier.
 Marcus Rodriguez: Perfect. Thanks Alex.
-# Action Item 1: Alex Kim to send Redis cluster details and connection pooling config to Marcus Rodriguez
+# Action Item 1: Alex Kim to send Redis cluster details to Marcus Rodriguez
+# Action Item 2: Alex Kim to send connection pooling config to Marcus Rodriguez
 
 00:00:45
 Sarah Chen: Cool. Priya, how's the dashboard?
@@ -20,8 +21,8 @@ Priya Patel: I need someone to review it today though because I can't really mov
 Sarah Chen: Okay I'll ping the design team about those mockups. Marcus can you review Priya's PR by end of day?
 Marcus Rodriguez: Yep. I'll do it right after lunch.
 Priya Patel: Thanks.
-# Action Item 2: Sarah Chen to ping the design team about the mockups.
-# Action Item 3: Marcus Rodriguez to review Priya's PR by end of day.
+# Action Item 3: Sarah Chen to ping the design team about the mockups.
+# Action Item 4: Marcus Rodriguez to review Priya's PR by end of day.
 
 
 00:01:30
@@ -32,8 +33,8 @@ Alex Kim: Yeah. I identified it was a memory leak in the logging service. I've a
 Sarah Chen: Um, let me check with product first. I'll confirm by tomorrow morning whether Wednesday works. What time were you thinking?
 Alex Kim: 2 PM to 4 PM EST should be enough.
 Sarah Chen: Okay. I'll get back to you tomorrow.
-# Action Item 4: Sarah Chen to confirm Wednesday works for Product.
-# Action Item 5: Alex Kim to schedule a maintenance window for the database migration.
+# Action Item 5: Sarah Chen to confirm Wednesday works for Product.
+# Action Item 6: Alex Kim to schedule a maintenance window for the database migration.
 
 00:02:15
 Sarah Chen: Anything else from anyone?
@@ -45,4 +46,4 @@ Priya Patel: Yeah okay. Will do.
 Sarah Chen: Alright. Thanks everyone. Let's have a great day.
 Marcus Rodriguez: Thanks.
 Alex Kim: See ya.
-# Action Item 6: Priya Patel to create a ticket for updating testing documentation.
+# Action Item 7: Priya Patel to create a ticket for updating testing documentation.
