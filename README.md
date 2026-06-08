@@ -1,6 +1,6 @@
 # OREILLY EDD COURSE
 
-Exercises from the O'Reilly Event-Driven Data course.
+Exercises from the O'Reilly Eval-Driven Development course.
 
 ## Setup
 
