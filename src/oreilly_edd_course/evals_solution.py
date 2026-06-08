@@ -1,3 +1,4 @@
+import ast
 import asyncio
 from datetime import date
 from typing import Literal
@@ -20,6 +21,16 @@ class MeetingTodos(BaseModel):
     todos: list[Todo]
     meeting_date: date
     attendees: list[str]
+    code: str
+
+
+    @field_validator("code")
+    def is_valid_pthon(cls, v):
+        if ast.parse(v):
+            return v
+        else:
+            raise ValueError("Not valid python")
+
 
     @field_validator("meeting_date")
     def validate_meeting_date(cls, v):
@@ -84,7 +95,7 @@ async def evaluate():
 
 
 if __name__ == "__main__":
-    asyncio.run(evaluate()
+    asyncio.run(evaluate())
 
 
 for mode in ["claude-3-7-sonnet-latest
