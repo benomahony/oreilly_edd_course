@@ -13,12 +13,21 @@ Your job is to implement extract_action_items() so it passes.
 
 import asyncio
 
+from pydantic_ai.models.openai import OpenAIChatModel
+from pydantic_ai.providers.openai import OpenAIProvider
 from pydantic_evals import Case, Dataset
 from pydantic_evals.evaluators import LLMJudge
 
-from oreilly_edd_course.core.config import get_model
 from oreilly_edd_course.core.transcripts import load_transcript
 from oreilly_edd_course.models import ActionItems
+
+model = OpenAIChatModel(
+    "qwen/qwen3.6-35b-a3b@q4_k_m",
+    provider=OpenAIProvider(
+        base_url="http://localhost:1234/v1",
+        api_key="lm-studio",
+    ),
+)
 
 transcript1 = load_transcript("transcript1")
 transcript2 = load_transcript("transcript2")
@@ -37,7 +46,7 @@ dataset = Dataset[str, ActionItems, None](
         Case(name="product_planning_meeting", inputs=transcript2),
         Case(name="client_onboarding_call", inputs=transcript3),
     ],
-    evaluators=[LLMJudge(model=get_model(), rubric=rubric, include_input=True)],
+    evaluators=[LLMJudge(model=model, rubric=rubric, include_input=True)],
 )
 
 

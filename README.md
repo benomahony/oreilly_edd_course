@@ -20,8 +20,8 @@ uv sync
 4. Verify the server is running at `http://localhost:1234`
 
 The Agent connects to LM Studio's default OpenAI-compatible API endpoint at `http://localhost:1234/v1`.
-Override the model id/base URL/API key via the `EDD_MODEL_ID` / `EDD_BASE_URL` / `EDD_API_KEY`
-environment variables (see `core/config.py`).
+Each `exercise.py`/`solution.py` builds its `OpenAIChatModel`/`OpenAIProvider` inline - if you're
+on a different model or port, edit that one line directly in the file you're running.
 
 ## How this course works
 

@@ -1,16 +1,13 @@
 from datetime import date
-from typing import Literal
 
 from pydantic import BaseModel, EmailStr, Field, field_validator
-
-Priority = Literal["high", "medium", "low"]
 
 
 class Person(BaseModel):
     """Person schema."""
 
     name: str
-    email: EmailStr
+    email: EmailStr | None = None
 
 
 class ActionItem(BaseModel):
@@ -19,7 +16,6 @@ class ActionItem(BaseModel):
     task: str = Field(min_length=1)
     owner: Person
     when: date
-    priority: Priority
 
 
 class ActionItems(BaseModel):
