@@ -14,7 +14,7 @@ from pydantic_ai import Agent
 from pydantic_ai.models.openai import OpenAIChatModel
 from pydantic_ai.providers.openai import OpenAIProvider
 
-from oreilly_edd_course.code_along_2.exercise import dataset
+from oreilly_edd_course.code_along_2.exercise import evaluate
 from oreilly_edd_course.models import ActionItems
 
 model = OpenAIChatModel(
@@ -59,10 +59,7 @@ async def extract_action_items(transcript: str) -> ValidatedActionItems:
     return result.output
 
 
-async def evaluate() -> None:
-    report = await dataset.evaluate(extract_action_items)
-    report.print(include_input=True, include_output=True, include_reasons=True)
-
-
 if __name__ == "__main__":
-    asyncio.run(evaluate())
+    # Same eval bar and same red/green runner as the exercise - a solution that
+    # gets judged by a different eval than the stub isn't a solution.
+    asyncio.run(evaluate(extract_action_items))

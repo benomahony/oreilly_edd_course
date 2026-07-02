@@ -1,7 +1,7 @@
 [project]
 name = "oreilly-edd-course"
 version = "0.1.0"
-description = "Add your description here"
+description = "Exercises for the O'Reilly Eval Driven Development for Reliable Agents course"
 readme = "README.md"
 authors = [{ name = "benomahony", email = "ben.omahony@thoughtworks.com" }]
 requires-python = ">=3.12"

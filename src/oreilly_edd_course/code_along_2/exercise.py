@@ -12,6 +12,8 @@ Your job is to implement extract_action_items() so it passes.
 """
 
 import asyncio
+import sys
+from collections.abc import Awaitable, Callable
 
 from pydantic_ai.models.openai import OpenAIChatModel
 from pydantic_ai.providers.openai import OpenAIProvider
@@ -56,10 +58,22 @@ async def extract_action_items(transcript: str) -> ActionItems:
     )
 
 
-async def evaluate() -> None:
-    report = await dataset.evaluate(extract_action_items)
-    report.print(include_input=True, include_output=True, include_reasons=True)
+async def evaluate(task: Callable[[str], Awaitable[ActionItems]]) -> None:
+    """Run the eval bar and exit red or green - the EDD loop needs a visible signal."""
+    report = await dataset.evaluate(task)
+    report.print(include_output=True, include_reasons=True)
+
+    crashed = [failure.name for failure in report.failures]
+    failed = [
+        case.name
+        for case in report.cases
+        if not all(result.value for result in case.assertions.values())
+    ]
+    if crashed or failed:
+        print(f"\nFAILED - crashed: {crashed or 'none'}, failed evals: {failed or 'none'}")
+        sys.exit(1)
+    print("\nPASSED - all cases met the eval bar")
 
 
 if __name__ == "__main__":
-    asyncio.run(evaluate())
+    asyncio.run(evaluate(extract_action_items))

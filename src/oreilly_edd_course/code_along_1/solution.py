@@ -58,8 +58,10 @@ if __name__ == "__main__":
     console = Console()
     console.print(Panel(diff_text(expected_task, actual_task), title="Task diff"))
 
-    # This kind of exact-match assertion is brittle (see Code Along 2: it's
-    # exactly the "Equality Evals" problem the course migrates away from).
-    assert actual_task.lower() == expected_task.lower(), (
-        f"Task is not an exact match, got: {actual_task!r}"
-    )
+    # Equality evals only work when an exact match is required - the diff above
+    # shows how they break on harmless rephrasing of free text:
+    # assert actual_task.lower() == expected_task.lower()  # brittle!
+    # Contains evals check for what actually matters and survive rewording:
+    task = actual_task.lower()
+    assert "redis" in task, f"Expected the Redis task first, got: {actual_task!r}"
+    assert "marcus rodriguez" in task, f"Expected Marcus as the recipient, got: {actual_task!r}"
