@@ -1,7 +1,8 @@
 """
-Step 1: Evals for the Action Extractor — Solution.
+Step 1: Structured Extraction & Evals — Solution.
 
-Demonstrates LLMJudge, EqualsExpected, and a custom NoDuplicateTodos evaluator.
+Pydantic models with validators, structured extraction, LLMJudge,
+EqualsExpected, and a custom NoDuplicateTodos evaluator.
 """
 
 import asyncio
@@ -9,7 +10,7 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 from pydantic_ai import Agent
 from pydantic_ai.models.openai import OpenAIChatModel
 from pydantic_ai.providers.openai import OpenAIProvider
@@ -30,17 +31,34 @@ model = OpenAIChatModel(
 
 
 class Todo(BaseModel):
-    who: str
-    what: str
-    when: date
-    criticality: Literal["high", "medium", "low"]
-    theme: Literal["Coordination Task", "Code Review", "Other"]
+    who: str = Field(description="Person responsible", min_length=1)
+    what: str = Field(description="The action to take")
+    when: date = Field(description="Due date")
+    criticality: Literal["high", "medium", "low"] = Field(description="Priority")
+
+    @field_validator("who")
+    @classmethod
+    def who_not_empty(cls, v: str) -> str:
+        assert v.strip(), "who must not be empty"
+        return v.strip()
+
+    @field_validator("when")
+    @classmethod
+    def when_not_too_old(cls, v: date) -> date:
+        assert v >= date(2020, 1, 1), f"Date {v} is unreasonably old"
+        return v
 
 
 class MeetingTodos(BaseModel):
     todos: list[Todo]
     meeting_date: date
     attendees: list[str]
+
+    @field_validator("meeting_date")
+    @classmethod
+    def meeting_date_not_too_old(cls, v: date) -> date:
+        assert v >= date(2020, 1, 1), f"Meeting date {v} is unreasonably old"
+        return v
 
 
 def load_transcript(path: str) -> str:
@@ -63,8 +81,6 @@ async def extract_todos(transcript: str) -> MeetingTodos:
     return (await agent.run(transcript)).output
 
 
-# ── Custom evaluator: check for duplicate todos ──
-
 @dataclass
 class NoDuplicateTodos(Evaluator):
     @override
@@ -77,8 +93,6 @@ class NoDuplicateTodos(Evaluator):
             seen.add(key)
         return EvaluationReason(value=1.0, reason=f"No dupes in {len(ctx.output.todos)} todos")
 
-
-# ── Dataset with multiple evaluator types ──
 
 rubric = "- TODOs should be clear, concise, and actionable.\n- No hallucinated goals."
 
