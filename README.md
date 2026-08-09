@@ -2,7 +2,7 @@
 
 Exercises from the O'Reilly Eval-Driven Development course.
 
-A progressive walkthrough of Eval-Driven Development: from basic agent extraction, through comprehensive evals, self-improving agents, and production-grade eval pipelines.
+A progressive walkthrough of Eval-Driven Development: from basic agent extraction, through comprehensive evals, self-improving agents, CI pipelines, and production monitoring.
 
 ## Setup
 
@@ -14,7 +14,7 @@ Install [LM Studio](https://lmstudio.ai/), download a model (e.g., `qwen/qwen3.6
 
 ## Course Structure
 
-Three progressive steps. Each has an exercise file (with `TODO` markers) and a solution.
+Each step has an exercise file (with `TODO` markers) and a solution.
 
 ### Step 0: Warm-up — Basic Agent
 
@@ -46,16 +46,27 @@ uv run src/oreilly_edd_course/improver_agent_solution.py  # solution
 
 **Key concepts:** eval-feedback-improve loop, LLM debugging LLM, minimum-necessary-change principle.
 
-### Step 3: Evals in Production
+### Step 3a: CI Pipeline Evals
 
-A CI-friendly eval runner with threshold-based pass/fail, regression detection against baselines, and JSON export for dashboards.
+Run evals as a CI gate: threshold-based pass/fail, regression detection against baselines, JSON export for dashboards. This is what you run before deploying — it tells you whether to ship.
+
+```bash
+uv run src/oreilly_edd_course/ci_pipeline_evals.py          # exercise
+uv run src/oreilly_edd_course/ci_pipeline_evals_solution.py  # solution
+```
+
+**Key concepts:** evals as a CI gate, regression detection, machine-readable output, configurable thresholds.
+
+### Step 3b: Production Evals (Monitoring)
+
+Monitor live agent outputs in production: evaluate every N-th request using LLMJudge, track scores over time, detect drift, and alert on degradation. This is what runs after deploy — it tells you whether things are getting worse.
 
 ```bash
 uv run src/oreilly_edd_course/production_evals.py          # exercise
 uv run src/oreilly_edd_course/production_evals_solution.py  # solution
 ```
 
-**Key concepts:** evals as a CI gate, regression detection, machine-readable output, configurable thresholds.
+**Key concepts:** sampling production traffic, LLMJudge on real outputs, drift detection, JSONL logging for observability.
 
 ## File Reference
 
@@ -65,7 +76,8 @@ uv run src/oreilly_edd_course/production_evals_solution.py  # solution
 | `evals.py` / `evals_solution.py` | Step 1: Comprehensive evals |
 | `improver_agent.py` / `improver_agent_solution.py` | Step 2: Self-improving agent |
 | `improver_instructions.md` | Instructions file improved iteratively |
-| `production_evals.py` / `production_evals_solution.py` | Step 3: Production eval runner |
+| `ci_pipeline_evals.py` / `ci_pipeline_evals_solution.py` | Step 3a: CI gate evals |
+| `production_evals.py` / `production_evals_solution.py` | Step 3b: Production monitoring |
 | `transcript1.txt` | Engineering standup (7 action items) |
 | `transcript2.txt` | Product planning meeting |
 | `transcript3.txt` | Client onboarding call |
