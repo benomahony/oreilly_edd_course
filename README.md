@@ -46,7 +46,7 @@ uv run src/oreilly_edd_course/improver_agent_solution.py  # solution
 
 **Key concepts:** eval-feedback-improve loop, LLM debugging LLM, minimum-necessary-change principle.
 
-### Step 3a: CI Pipeline Evals
+### Step 3: CI Pipeline Evals
 
 Run evals as a CI gate: threshold-based pass/fail, regression detection against baselines, JSON export for dashboards. This is what you run before deploying — it tells you whether to ship.
 
@@ -57,7 +57,7 @@ uv run src/oreilly_edd_course/ci_pipeline_evals_solution.py  # solution
 
 **Key concepts:** evals as a CI gate, regression detection, machine-readable output, configurable thresholds.
 
-### Step 3b: Production Evals (Monitoring)
+### Step 4: Production Evals (Monitoring)
 
 Monitor live agent outputs in production: evaluate every N-th request using LLMJudge, track scores over time, detect drift, and alert on degradation. This is what runs after deploy — it tells you whether things are getting worse.
 
@@ -76,8 +76,8 @@ uv run src/oreilly_edd_course/production_evals_solution.py  # solution
 | `evals.py` / `evals_solution.py` | Step 1: Comprehensive evals |
 | `improver_agent.py` / `improver_agent_solution.py` | Step 2: Self-improving agent |
 | `improver_instructions.md` | Instructions file improved iteratively |
-| `ci_pipeline_evals.py` / `ci_pipeline_evals_solution.py` | Step 3a: CI gate evals |
-| `production_evals.py` / `production_evals_solution.py` | Step 3b: Production monitoring |
+| `ci_pipeline_evals.py` / `ci_pipeline_evals_solution.py` | Step 3: CI gate evals |
+| `production_evals.py` / `production_evals_solution.py` | Step 4: Production monitoring |
 | `transcript1.txt` | Engineering standup (7 action items) |
 | `transcript2.txt` | Product planning meeting |
 | `transcript3.txt` | Client onboarding call |
