@@ -1,14 +1,14 @@
 """
-Step 1: Basic Evals — Exercise.
+Step 1: Evals for the Action Extractor — Exercise.
 
-Fill in the TODOs to build a comprehensive eval suite.
+Fill in the TODOs to build a comprehensive eval suite using pydantic-evals.
 """
 
 import asyncio
 from datetime import date
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from pydantic_ai import Agent
 from pydantic_ai.models.openai import OpenAIChatModel
 from pydantic_ai.providers.openai import OpenAIProvider
@@ -20,16 +20,13 @@ model = OpenAIChatModel(
     provider=OpenAIProvider(base_url="http://localhost:1234/v1", api_key="lm-studio"),
 )
 
-Criticality = Literal["high", "medium", "low"]
-TodoTheme = Literal["Coordination Task", "Code Review", "Other"]
-
 
 class Todo(BaseModel):
-    who: str = Field(description="Who is responsible", min_length=1, max_length=100)
+    who: str
     what: str
     when: date
-    criticality: Criticality
-    theme: TodoTheme
+    criticality: Literal["high", "medium", "low"]
+    theme: Literal["Coordination Task", "Code Review", "Other"]
 
 
 class MeetingTodos(BaseModel):
@@ -43,9 +40,9 @@ def load_transcript(path: str) -> str:
         return f.read()
 
 
-transcript1 = load_transcript("src/oreilly_edd_course/transcript1.txt")
-transcript2 = load_transcript("src/oreilly_edd_course/transcript2.txt")
-transcript3 = load_transcript("src/oreilly_edd_course/transcript3.txt")
+t1 = load_transcript("src/oreilly_edd_course/workshop/transcript1.txt")
+t2 = load_transcript("src/oreilly_edd_course/workshop/transcript2.txt")
+t3 = load_transcript("src/oreilly_edd_course/workshop/transcript3.txt")
 
 
 async def extract_todos(transcript: str) -> MeetingTodos:
@@ -55,26 +52,29 @@ async def extract_todos(transcript: str) -> MeetingTodos:
         retries=4,
         instructions="Extract ALL todos from the transcript as structured data.",
     )
-    result = await agent.run(transcript)
-    return result.output
+    return (await agent.run(transcript)).output
 
 
-# TODO 1: Add an EqualsExpected evaluator to transcript1 checking for 7 todos
-# TODO 2: Add LLMJudge as a dataset-level evaluator
+# ── TODO 1: Add an EqualsExpected evaluator to the "Stand up" case ──
+# Transcript 1 has exactly 7 action items. Assert that the agent finds all 7.
+
+# ── TODO 2: Add a dataset-level LLMJudge evaluator ──
+# Use a rubric that checks for clear, concise, actionable TODOs
+# with no hallucinated goals.
+
+# ── TODO 3: Run the evals, print results, and assert all pass ──
+
 rubric = "- TODOs should be clear, concise, and actionable.\n- No hallucinated goals."
-pydantic_llmjudge = LLMJudge(model=model, rubric=rubric)
 
 dataset = Dataset(
     cases=[
-        Case(name="Stand up meeting", inputs=transcript1),
-        Case(name="Product Planning Meeting", inputs=transcript2),
-        Case(name="Client Onboarding Call", inputs=transcript3),
+        Case(name="Stand up", inputs=t1),
+        Case(name="Product Planning", inputs=t2),
+        Case(name="Client Onboarding", inputs=t3),
     ],
-    evaluators=[pydantic_llmjudge],
+    evaluators=[LLMJudge(model=model, rubric=rubric)],
 )
 
-
-# TODO 3: Run, print results, and assert all cases pass
 
 async def evaluate():
     report = await dataset.evaluate(extract_todos)

@@ -45,7 +45,7 @@ def load_transcript(path: str) -> str:
         return f.read()
 
 
-PRODUCTION_TRANSCRIPTS = [load_transcript(f"src/oreilly_edd_course/transcript{i}.txt") for i in range(1, 4)]
+PRODUCTION_TRANSCRIPTS = [load_transcript(f"src/oreilly_edd_course/workshop/transcript{i}.txt") for i in range(1, 4)]
 
 
 class ProductionEvalResult(BaseModel):

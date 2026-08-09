@@ -51,7 +51,7 @@ def load_transcript(path: str) -> str:
 
 # In production, this would be a queue of real user transcripts
 PRODUCTION_TRANSCRIPTS = [
-    load_transcript(f"src/oreilly_edd_course/transcript{i}.txt")
+    load_transcript(f"src/oreilly_edd_course/workshop/transcript{i}.txt")
     for i in range(1, 4)
 ]
 

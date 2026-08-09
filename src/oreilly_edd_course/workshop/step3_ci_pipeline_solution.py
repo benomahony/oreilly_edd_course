@@ -40,9 +40,9 @@ def load_transcript(path: str) -> str:
         return f.read()
 
 
-t1 = load_transcript("src/oreilly_edd_course/transcript1.txt")
-t2 = load_transcript("src/oreilly_edd_course/transcript2.txt")
-t3 = load_transcript("src/oreilly_edd_course/transcript3.txt")
+t1 = load_transcript("src/oreilly_edd_course/workshop/transcript1.txt")
+t2 = load_transcript("src/oreilly_edd_course/workshop/transcript2.txt")
+t3 = load_transcript("src/oreilly_edd_course/workshop/transcript3.txt")
 
 
 async def extract_todos(transcript: str) -> MeetingTodos:
