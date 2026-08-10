@@ -13,12 +13,12 @@ from typing import Literal
 
 from pydantic import BaseModel
 from pydantic_ai import Agent
-from pydantic_ai.models.openai import OpenAIChatModel
-from pydantic_ai.providers.openai import OpenAIProvider
+from oreilly_edd_course.providers import get_model
+from oreilly_edd_course.telemetry import init_telemetry
 from pydantic_evals import Case, Dataset
 from pydantic_evals.evaluators import LLMJudge
 
-model = OpenAIChatModel("qwen/qwen3.6-35b-a3b", provider=OpenAIProvider(base_url="http://localhost:1234/v1", api_key="lm-studio"))
+model = get_model()
 
 
 class Todo(BaseModel):
@@ -124,4 +124,5 @@ async def evaluate(output_dir: Path = Path("eval_reports"), threshold: float = 0
 
 
 if __name__ == "__main__":
+    init_telemetry(project_name="edd-workshop")
     asyncio.run(evaluate())

@@ -6,6 +6,7 @@ import subprocess
 from pathlib import Path
 
 import typer
+from InquirerPy import inquirer
 
 app = typer.Typer(help="O'Reilly EDD course CLI", no_args_is_help=True)
 
@@ -25,17 +26,29 @@ def _run(*cmd: str) -> None:
     subprocess.run(cmd, check=True)
 
 
-def _using_google() -> bool:
-    return os.environ.get("PROVIDER", "lmstudio") == "google"
+def _run_with_provider(provider: str, *cmd: str) -> None:
+    """Run a command with the selected provider set in its environment."""
+    env = {**os.environ, "PROVIDER": provider}
+    subprocess.run(cmd, check=True, env=env)
+
+
+def _select_provider() -> str:
+    """Prompt the user to pick a provider via an interactive dropdown."""
+    return inquirer.select(
+        message="Select provider:",
+        choices=["lmstudio", "google"],
+        default="google",
+    ).execute()
 
 
 @app.command()
 def setup() -> None:
-    """Install deps; start the model server and load the model (skipped for Google)."""
+    """Install deps and prepare the selected provider."""
     _require("uv")
     _run("uv", "sync")
 
-    if _using_google():
+    provider = _select_provider()
+    if provider == "google":
         typer.echo("Using Google provider - no local model needed.")
         return
 
@@ -48,9 +61,7 @@ def setup() -> None:
     except subprocess.CalledProcessError:
         typer.echo(
             f"Couldn't load {MODEL} locally (likely insufficient memory).\n"
-            "Switch to Google instead:\n"
-            "    PROVIDER=google edd setup\n"
-            "    PROVIDER=google edd run"
+            "Re-run setup and pick Google instead."
         )
         raise typer.Exit(1)
 
@@ -67,15 +78,15 @@ def step(number: int = typer.Argument(..., help="Workshop step 1-4")) -> None:
     script = scripts.get(number)
     if script is None:
         raise typer.BadParameter("step must be 1-4")
-    _run("uv", "run", str(WORKSHOP / script))
+    provider = _select_provider()
+    _run_with_provider(provider, "uv", "run", str(WORKSHOP / script))
 
 
 @app.command()
-def run() -> None:
-    """Start Phoenix, run a traced inference, and open the UI."""
+def obs() -> None:
+    """Start Phoenix and open the UI."""
     _require("docker")
     _run("docker", "compose", "up", "-d")
-    _run("uv", "run", "src/oreilly_edd_course/observability.py")
     _run("open", OBS_UI)
 
 

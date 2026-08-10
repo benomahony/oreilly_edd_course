@@ -9,10 +9,10 @@ import asyncio
 from pathlib import Path
 
 from pydantic_ai import Agent
-from pydantic_ai.models.openai import OpenAIChatModel
-from pydantic_ai.providers.openai import OpenAIProvider
+from oreilly_edd_course.providers import get_model
+from oreilly_edd_course.telemetry import init_telemetry
 
-model = OpenAIChatModel("qwen/qwen3.6-35b-a3b", provider=OpenAIProvider(base_url="http://localhost:1234/v1", api_key="lm-studio"))
+model = get_model()
 
 
 # ── Your models and agent ──
@@ -34,4 +34,5 @@ model = OpenAIChatModel("qwen/qwen3.6-35b-a3b", provider=OpenAIProvider(base_url
 
 
 if __name__ == "__main__":
+    init_telemetry(project_name="edd-workshop")
     asyncio.run(main())
