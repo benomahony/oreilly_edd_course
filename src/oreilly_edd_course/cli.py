@@ -15,6 +15,19 @@ MODEL = "meta/muse-glimmer"
 WORKSHOP = Path(__file__).parent / "workshop"
 OBS_UI = "http://localhost:6006"
 
+STEPS = [
+    "Step 1: Structured extraction & evals",
+    "Step 2: Self-improving agent",
+    "Step 3: CI pipeline evals",
+    "Step 4: Production evals",
+]
+STEP_SCRIPTS = {
+    "Step 1: Structured extraction & evals": "step1_evals.py",
+    "Step 2: Self-improving agent": "step2_improver.py",
+    "Step 3: CI pipeline evals": "step3_ci_pipeline.py",
+    "Step 4: Production evals": "step4_production.py",
+}
+
 
 def _require(name: str) -> None:
     """Fail with a clear message if a prerequisite is missing on PATH."""
@@ -67,17 +80,10 @@ def setup() -> None:
 
 
 @app.command()
-def step(number: int = typer.Argument(..., help="Workshop step 1-4")) -> None:
-    """Run a workshop step."""
-    scripts = {
-        1: "step1_evals.py",
-        2: "step2_improver.py",
-        3: "step3_ci_pipeline.py",
-        4: "step4_production.py",
-    }
-    script = scripts.get(number)
-    if script is None:
-        raise typer.BadParameter("step must be 1-4")
+def step() -> None:
+    """Run a workshop exercise."""
+    choice = inquirer.select(message="Select exercise:", choices=STEPS, default=STEPS[0]).execute()
+    script = STEP_SCRIPTS[choice]
     provider = _select_provider()
     _run_with_provider(provider, "uv", "run", str(WORKSHOP / script))
 

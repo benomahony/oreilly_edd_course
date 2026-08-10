@@ -2,16 +2,33 @@
 
 Call `init_telemetry()` at the start of a step (before creating agents) to
 send its traces to the local Phoenix instance. Uses OpenInference enrichment
-for the richest Phoenix visualizations.
+for the richest Phoenix visualizations. Warns if Phoenix isn't running.
 """
+
+import urllib.request
 
 from pydantic_ai import Agent
 
 PHOENIX_ENDPOINT = "http://localhost:6006"
 
 
+def _phoenix_up() -> bool:
+    """Return True if the local Phoenix instance is reachable."""
+    try:
+        with urllib.request.urlopen(f"{PHOENIX_ENDPOINT}/health", timeout=1) as response:
+            return response.status == 200
+    except Exception:
+        return False
+
+
 def init_telemetry(project_name: str | None = None) -> None:
     """Point the global tracer provider at Phoenix and instrument agents."""
+    if not _phoenix_up():
+        print(
+            f"Warning: Phoenix is not running at {PHOENIX_ENDPOINT}. "
+            "Traces won't be visible. Start it with `edd obs`."
+        )
+
     from opentelemetry import trace
     from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
     from opentelemetry.sdk.resources import Resource
