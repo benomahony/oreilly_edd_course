@@ -26,12 +26,6 @@ def setup() -> None:
 
 
 @app.command()
-def infer() -> None:
-    """Smoke-test inference against the configured provider."""
-    _run("uv", "run", "src/oreilly_edd_course/inference.py")
-
-
-@app.command()
 def step(number: int = typer.Argument(..., help="Workshop step 1-4")) -> None:
     """Run a workshop step."""
     scripts = {
