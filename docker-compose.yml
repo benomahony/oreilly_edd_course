@@ -1,11 +1,8 @@
-# Local observability stack for the EDD course.
-# Jaeger all-in-one: ingests OpenTelemetry spans over OTLP HTTP (port 4318)
-# and exposes a UI for inspecting agent traces (port 16686).
+# Local AI-native observability stack for the EDD course.
+# Arize Phoenix (single container): ingests OpenTelemetry spans over OTLP HTTP
+# (port 6006) and exposes an AI-native UI for inspecting agent traces (port 6006).
 services:
-  jaeger:
-    image: jaegertracing/all-in-one:latest
+  phoenix:
+    image: arizephoenix/phoenix:latest
     ports:
-      - "16686:16686" # Jaeger UI
-      - "4318:4318"   # OTLP HTTP
-    environment:
-      COLLECTOR_OTLP_ENABLED: "true"
+      - "6006:6006" # Phoenix UI + OTLP HTTP ingestion

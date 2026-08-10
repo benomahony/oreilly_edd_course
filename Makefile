@@ -2,8 +2,8 @@
 # Make targets for LM Studio setup, inference, and local observability.
 
 LMS        := $(HOME)/.lmstudio/bin/lms
-MODEL      := qwen/qwen3.6-35b-a3b 
-OBS_UI     := http://localhost:16686
+MODEL      := meta/muse-glimmer 
+OBS_UI     := http://localhost:6006
 WORKSHOP   := src/oreilly_edd_course/workshop
 
 .DEFAULT_GOAL := help
@@ -82,7 +82,7 @@ step4-solution: ## Run Step 4 solution
 # ── Observability ─────────────────────────────────────────────────────────────
 
 .PHONY: obs-up
-obs-up: ## Start the local observability stack (Jaeger)
+obs-up: ## Start the local observability stack (Arize Phoenix)
 	docker compose up -d
 
 .PHONY: obs-down
@@ -94,7 +94,7 @@ obs-logs: ## Tail observability stack logs
 	docker compose logs -f
 
 .PHONY: obs-ui
-obs-ui: ## Open the Jaeger UI
+obs-ui: ## Open the Phoenix UI
 	open "$(OBS_UI)"
 
 .PHONY: obs-run
