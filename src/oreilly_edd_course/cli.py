@@ -15,17 +15,17 @@ MODEL = "meta/muse-glimmer"
 WORKSHOP = Path(__file__).parent / "workshop"
 OBS_UI = "http://localhost:6006"
 
-STEPS = [
-    "Step 1: Structured extraction & evals",
-    "Step 2: Self-improving agent",
-    "Step 3: CI pipeline evals",
-    "Step 4: Production evals",
+EXERCISES = [
+    "Structured extraction & evals",
+    "Self-improving agent",
+    "CI pipeline evals",
+    "Production evals",
 ]
-STEP_SCRIPTS = {
-    "Step 1: Structured extraction & evals": "step1_evals.py",
-    "Step 2: Self-improving agent": "step2_improver.py",
-    "Step 3: CI pipeline evals": "step3_ci_pipeline.py",
-    "Step 4: Production evals": "step4_production.py",
+EXERCISE_SCRIPTS = {
+    "Structured extraction & evals": "step1_evals.py",
+    "Self-improving agent": "step2_improver.py",
+    "CI pipeline evals": "step3_ci_pipeline.py",
+    "Production evals": "step4_production.py",
 }
 
 
@@ -80,10 +80,12 @@ def setup() -> None:
 
 
 @app.command()
-def step() -> None:
+def exercise() -> None:
     """Run a workshop exercise."""
-    choice = inquirer.select(message="Select exercise:", choices=STEPS, default=STEPS[0]).execute()
-    script = STEP_SCRIPTS[choice]
+    choice = inquirer.select(
+        message="Select exercise:", choices=EXERCISES, default=EXERCISES[0]
+    ).execute()
+    script = EXERCISE_SCRIPTS[choice]
     provider = _select_provider()
     _run_with_provider(provider, "uv", "run", str(WORKSHOP / script))
 
