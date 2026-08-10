@@ -19,16 +19,13 @@ import asyncio
 
 from pydantic import BaseModel
 from pydantic_ai import Agent
-from pydantic_ai.models.openai import OpenAIChatModel
-from pydantic_ai.providers.openai import OpenAIProvider
+
+from oreilly_edd_course.providers import get_model
 
 PHOENIX_ENDPOINT = "http://localhost:6006"
 PHOENIX_UI = "http://localhost:6006"
 
-model = OpenAIChatModel(
-    "meta/muse-glimmer",
-    provider=OpenAIProvider(base_url="http://localhost:1234/v1", api_key="lm-studio"),
-)
+model = get_model()
 
 
 class Todo(BaseModel):
