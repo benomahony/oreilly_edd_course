@@ -18,7 +18,7 @@ from pydantic_ai.models.openai import OpenAIChatModel
 from pydantic_ai.providers.openai import OpenAIProvider
 from pydantic_evals.evaluators import EvaluatorContext, LLMJudge
 
-model = OpenAIChatModel("qwen/qwen3.6-35b-a3b@q4_k_m", provider=OpenAIProvider(base_url="http://localhost:1234/v1", api_key="lm-studio"))
+model = OpenAIChatModel("qwen/qwen3.6-35b-a3b", provider=OpenAIProvider(base_url="http://localhost:1234/v1", api_key="lm-studio"))
 
 
 class Todo(BaseModel):

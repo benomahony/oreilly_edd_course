@@ -10,6 +10,8 @@ dependencies = [
     "pydantic-ai>=1.56.0",
     "pydantic-evals>=1.56.0",
     "rich>=14.3.2",
+    "opentelemetry-sdk>=1.39.1",
+    "opentelemetry-exporter-otlp-proto-http>=1.39.1",
 ]
 
 [build-system]

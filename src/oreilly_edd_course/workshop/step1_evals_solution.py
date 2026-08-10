@@ -25,7 +25,7 @@ from pydantic_evals.evaluators import (
 from typing_extensions import override
 
 model = OpenAIChatModel(
-    "qwen/qwen3.6-35b-a3b@q4_k_m",
+    "qwen/qwen3.6-35b-a3b",
     provider=OpenAIProvider(base_url="http://localhost:1234/v1", api_key="lm-studio"),
 )
 
@@ -84,21 +84,32 @@ async def extract_todos(transcript: str) -> MeetingTodos:
 @dataclass
 class NoDuplicateTodos(Evaluator):
     @override
-    async def evaluate(self, ctx: EvaluatorContext[str, MeetingTodos]) -> EvaluationReason:
+    async def evaluate(
+        self, ctx: EvaluatorContext[str, MeetingTodos]
+    ) -> EvaluationReason:
         seen: set[tuple[str, str]] = set()
         for todo in ctx.output.todos:
             key = (todo.who.lower(), todo.what.lower())
             if key in seen:
-                return EvaluationReason(value=0.0, reason=f"Duplicate: {todo.who} / {todo.what}")
+                return EvaluationReason(
+                    value=0.0, reason=f"Duplicate: {todo.who} / {todo.what}"
+                )
             seen.add(key)
-        return EvaluationReason(value=1.0, reason=f"No dupes in {len(ctx.output.todos)} todos")
+        return EvaluationReason(
+            value=1.0, reason=f"No dupes in {len(ctx.output.todos)} todos"
+        )
 
 
 rubric = "- TODOs should be clear, concise, and actionable.\n- No hallucinated goals."
 
 dataset = Dataset(
     cases=[
-        Case(name="Stand up", inputs=t1, expected_output=7, evaluators=(EqualsExpected(),)),
+        Case(
+            name="Stand up",
+            inputs=t1,
+            expected_output=7,
+            evaluators=(EqualsExpected(),),
+        ),
         Case(name="Product Planning", inputs=t2),
         Case(name="Client Onboarding", inputs=t3),
     ],
@@ -118,3 +129,4 @@ async def evaluate():
 
 if __name__ == "__main__":
     asyncio.run(evaluate())
+

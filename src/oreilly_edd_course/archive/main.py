@@ -27,7 +27,7 @@ class JudgeOpinion(BaseModel):
 
 def llm_judge(output: str) -> bool:
     model = OpenAIChatModel(
-        "qwen/qwen3.6-35b-a3b@q4_k_m",
+        "qwen/qwen3.6-35b-a3b",
         provider=OpenAIProvider(
             base_url="http://localhost:1234/v1",
             api_key="lm-studio",
@@ -51,7 +51,7 @@ def llm_judge(output: str) -> bool:
 
 def main(transcript: str) -> str:
     model = OpenAIChatModel(
-        "qwen/qwen3.6-35b-a3b@q4_k_m",
+        "qwen/qwen3.6-35b-a3b",
         provider=OpenAIProvider(
             base_url="http://localhost:1234/v1",
             api_key="lm-studio",

@@ -15,7 +15,7 @@ from pydantic_ai.providers.openai import OpenAIProvider
 from pydantic_evals import Case, Dataset
 from pydantic_evals.evaluators import EqualsExpected
 
-model = OpenAIChatModel("qwen/qwen3.6-35b-a3b@q4_k_m", provider=OpenAIProvider(base_url="http://localhost:1234/v1", api_key="lm-studio"))
+model = OpenAIChatModel("qwen/qwen3.6-35b-a3b", provider=OpenAIProvider(base_url="http://localhost:1234/v1", api_key="lm-studio"))
 
 INSTRUCTIONS_PATH = Path(__file__).parent / "improver_instructions.md"
 

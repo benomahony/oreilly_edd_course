@@ -1,0 +1,11 @@
+# Local observability stack for the EDD course.
+# Jaeger all-in-one: ingests OpenTelemetry spans over OTLP HTTP (port 4318)
+# and exposes a UI for inspecting agent traces (port 16686).
+services:
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "16686:16686" # Jaeger UI
+      - "4318:4318"   # OTLP HTTP
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"

@@ -8,7 +8,7 @@ Exercises from the O'Reilly Eval-Driven Development course.
 uv sync
 ```
 
-Install [LM Studio](https://lmstudio.ai/), download a model (e.g., `qwen/qwen3.6-35b-a3b@q4_k_m`), start the local server at `http://localhost:1234`.
+Install [LM Studio](https://lmstudio.ai/), download a model (e.g., `qwen/qwen3.6-35b-a3b `), start the local server at `http://localhost:1234`.
 
 ## Workshop
 
