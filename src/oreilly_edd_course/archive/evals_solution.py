@@ -6,6 +6,7 @@ from pydantic import BaseModel, Field, field_validator
 from pydantic_ai import Agent
 from pydantic_evals import Dataset, Case
 from pydantic_evals.evaluators import LLMJudge
+from oreilly_edd_course.providers import get_model
 
 Priority = Literal["high", "medium", "low"]
 
@@ -23,19 +24,18 @@ class MeetingTodos(BaseModel):
     attendees: list[str]
     code: str
 
-
     @field_validator("code")
-    def is_valid_pthon(cls, v):
-        if ast.parse(v):
+    def is_valid_python(cls, v):
+        try:
+            ast.parse(v)
             return v
-        else:
+        except SyntaxError:
             raise ValueError("Not valid python")
-
 
     @field_validator("meeting_date")
     def validate_meeting_date(cls, v):
-        if v != date.today():
-            raise ValueError("Meeting date must be today")
+        if v < date(2020, 1, 1):
+            raise ValueError("Meeting date seems unreasonably old")
         return v
 
 
@@ -44,14 +44,15 @@ def load_transcript(transcript: str) -> str:
         return f.read()
 
 
-transcript1 = load_transcript("src/oreilly_edd_course/transcript1.txt")
-transcript2 = load_transcript("src/oreilly_edd_course/transcript2.txt")
-transcript3 = load_transcript("src/oreilly_edd_course/transcript3.txt")
+transcript1 = load_transcript("src/oreilly_edd_course/workshop/transcript1.txt")
+transcript2 = load_transcript("src/oreilly_edd_course/workshop/transcript2.txt")
+transcript3 = load_transcript("src/oreilly_edd_course/workshop/transcript3.txt")
 
 
 async def extract_todos(transcript: str) -> MeetingTodos:
+    model = get_model()
     todo_agent = Agent(
-        model="anthropic:claude-3-7-sonnet-latest",
+        model=model,
         instructions="""
     You are a task-oriented assistant that can extract todos from a transcript.
     """,
@@ -67,7 +68,7 @@ rubric = """
 - TODOs should be assigned to a specific person.
 """
 pydantic_llmjudge = LLMJudge(
-    model="anthropic:claude-3-7-sonnet-latest",
+    model=get_model(),
     rubric=rubric,
 )
 
@@ -80,7 +81,7 @@ dataset = Dataset(
             inputs=transcript2,
         ),
         Case(
-            name="Client Onboarding Call ",
+            name="Client Onboarding Call",
             inputs=transcript3,
         ),
     ],
@@ -96,6 +97,3 @@ async def evaluate():
 
 if __name__ == "__main__":
     asyncio.run(evaluate())
-
-
-for mode in ["claude-3-7-sonnet-latest

@@ -33,6 +33,10 @@ model = get_model()
 # async def main(): ...
 
 
+async def main():
+    print("Step 4 is a stub. See step4_production_solution.py for the reference.")
+
+
 if __name__ == "__main__":
     init_telemetry(project_name="edd-workshop")
     asyncio.run(main())

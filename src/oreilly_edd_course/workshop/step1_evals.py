@@ -40,7 +40,7 @@ t3 = load_transcript("src/oreilly_edd_course/workshop/transcript3.txt")
 
 async def evaluate():
     # Run your evals and check the results
-    pass
+    print("Step 1 is a stub. See step1_evals_solution.py for the reference.")
 
 
 if __name__ == "__main__":

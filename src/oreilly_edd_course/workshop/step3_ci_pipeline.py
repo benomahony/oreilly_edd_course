@@ -27,7 +27,7 @@ model = get_model()
 
 
 async def main():
-    pass
+    print("Step 3 is a stub. See step3_ci_pipeline_solution.py for the reference.")
 
 
 if __name__ == "__main__":

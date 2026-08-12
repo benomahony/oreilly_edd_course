@@ -15,16 +15,19 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    provider: Literal["lmstudio", "google"] = "lmstudio"
+    provider: Literal["lmstudio", "google"] = "google"
     model: str = "meta/muse-glimmer"
+    google_model: str = "gemini-2.5-pro"
     lmstudio_base_url: str = "http://localhost:1234/v1"
 
 
 def get_model() -> Model:
     settings = Settings()
     if settings.provider == "google":
-        return GoogleModel(settings.model)
+        return GoogleModel(settings.google_model)
     return OpenAIChatModel(
         settings.model,
-        provider=OpenAIProvider(base_url=settings.lmstudio_base_url, api_key="lm-studio"),
+        provider=OpenAIProvider(
+            base_url=settings.lmstudio_base_url, api_key="lm-studio"
+        ),
     )

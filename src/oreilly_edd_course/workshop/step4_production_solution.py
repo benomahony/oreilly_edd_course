@@ -71,14 +71,33 @@ class ProductionMonitor:
             return None
 
         # Run LLMJudge on the production output
-        ctx = EvaluatorContext[str, MeetingTodos](inputs=transcript, output=output, expected_output=None, metadata={})
+        ctx = EvaluatorContext[str, MeetingTodos, dict](
+            name="production_eval",
+            inputs=transcript,
+            output=output,
+            expected_output=None,
+            metadata={},
+            duration=0.0,
+            _span_tree=None,
+            attributes={},
+            metrics={},
+        )
         eval_result = await self.judge.evaluate(ctx)
+
+        # Handle dict return type from LLMJudge
+        if isinstance(eval_result, dict):
+            key = next(iter(eval_result))
+            score = float(eval_result[key].value)
+            reason = str(eval_result[key].reason)
+        else:
+            score = float(eval_result.value)
+            reason = str(eval_result.reason)
 
         result = ProductionEvalResult(
             timestamp=datetime.now(),
             transcript_preview=transcript[:100],
-            score=eval_result.value,
-            reason=eval_result.reason,
+            score=score,
+            reason=reason,
             num_todos=len(output.todos),
         )
 

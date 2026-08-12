@@ -2,7 +2,7 @@
 Step 1: Structured Extraction & Evals — Solution.
 
 Pydantic models with validators, structured extraction, LLMJudge,
-EqualsExpected, and a custom NoDuplicateTodos evaluator.
+TodoCount, and a custom NoDuplicateTodos evaluator.
 """
 
 import asyncio
@@ -16,7 +16,6 @@ from oreilly_edd_course.providers import get_model
 from oreilly_edd_course.telemetry import init_telemetry
 from pydantic_evals import Case, Dataset
 from pydantic_evals.evaluators import (
-    EqualsExpected,
     EvaluationReason,
     Evaluator,
     EvaluatorContext,
@@ -79,6 +78,24 @@ async def extract_todos(transcript: str) -> MeetingTodos:
 
 
 @dataclass
+class TodoCount(Evaluator):
+    expected_count: int
+
+    @override
+    async def evaluate(
+        self, ctx: EvaluatorContext[str, MeetingTodos]
+    ) -> EvaluationReason:
+        actual = len(ctx.output.todos)
+        if actual == self.expected_count:
+            return EvaluationReason(
+                value=1.0, reason=f"Expected {self.expected_count} todos, got {actual}"
+            )
+        return EvaluationReason(
+            value=0.0, reason=f"Expected {self.expected_count} todos, got {actual}"
+        )
+
+
+@dataclass
 class NoDuplicateTodos(Evaluator):
     @override
     async def evaluate(
@@ -104,8 +121,7 @@ dataset = Dataset(
         Case(
             name="Stand up",
             inputs=t1,
-            expected_output=7,
-            evaluators=(EqualsExpected(),),
+            evaluators=(TodoCount(expected_count=7),),
         ),
         Case(name="Product Planning", inputs=t2),
         Case(name="Client Onboarding", inputs=t3),

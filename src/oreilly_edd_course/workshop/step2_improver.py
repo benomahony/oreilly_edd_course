@@ -45,7 +45,7 @@ def save_instructions(instructions: str) -> None:
 
 
 async def main():
-    pass
+    print("Step 2 is a stub. See step2_improver_solution.py for the reference.")
 
 
 if __name__ == "__main__":

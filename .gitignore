@@ -8,3 +8,6 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Local config (provider choice; must never hold API keys)
+.env
