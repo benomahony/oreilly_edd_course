@@ -12,43 +12,27 @@ Install [LM Studio](https://lmstudio.ai/), download a model (e.g., `meta/muse-gl
 
 ## Workshop
 
-Four progressive steps in `src/oreilly_edd_course/workshop/`. Each has an exercise file (with `TODO` markers) and a solution.
+Two parts in `src/oreilly_edd_course/workshop/`: a hands-on exercise to learn on, and a demo that ties the whole eval-driven-development loop together.
 
-### Step 1: Structured Extraction & Evals
+### Step 1: Structured Extraction & Evals (exercise)
 
-Define `Todo` and `MeetingTodos` Pydantic models, then evaluate extraction accuracy using `pydantic-evals`: `EqualsExpected`, `LLMJudge`, and custom evaluators.
+Define `Todo` and `MeetingTodos` Pydantic models, then evaluate extraction accuracy using `pydantic-evals`: `LLMJudge` and custom evaluators (`TodoCount`, `NoDuplicateTodos`). The exercise file has `TODO` markers; a reference solution sits alongside it.
 
 ```bash
 uv run src/oreilly_edd_course/workshop/step1_evals.py
 uv run src/oreilly_edd_course/workshop/step1_evals_solution.py
 ```
 
-### Step 2: Self-Improving Agent
+### Step 2: The Full EDD Loop (demo)
 
-The eval-feedback-improve loop: run evals on structured extraction → collect failures → improver rewrites instructions → repeat.
-Imports `extract_todos`, `Todo`, `MeetingTodos`, and transcripts from Step 1, then re-runs the extraction agent with improved instructions.
+A single run-it-and-watch showcase built on the Step 1 extractor:
 
-```bash
-uv run src/oreilly_edd_course/workshop/step2_improver.py
-uv run src/oreilly_edd_course/workshop/step2_improver_solution.py
-```
-
-### Step 3: CI Pipeline Evals
-
-Run evals as a CI gate before deploying: threshold-based pass/fail, regression detection, JSON export.
+- **Comprehensive evaluation** — structural (`TodoCount`, `NoDuplicateTodos`) + semantic (`LLMJudge`) + **lexical**: a [`lexguard`](https://pypi.org/project/lexguard/) lexicon that deterministically scores each todo for vague/weak phrasing.
+- **Self-improvement** — run evals, collect failures, and let an improver agent rewrite the extraction instructions **and grow a custom `lexguard` lexicon** of vague phrasings it spots. The guardrail co-evolves with the agent.
+- **Production monitoring** — simulate live traffic, run the cheap deterministic lexicon guard on 100% of it and a sampled `LLMJudge`, log to JSONL, and check for drift.
 
 ```bash
-uv run src/oreilly_edd_course/workshop/step3_ci_pipeline.py
-uv run src/oreilly_edd_course/workshop/step3_ci_pipeline_solution.py
-```
-
-### Step 4: Production Evals (Monitoring)
-
-Monitor live agent outputs after deploy: sample traffic, LLMJudge on real outputs, track scores over time, detect drift.
-
-```bash
-uv run src/oreilly_edd_course/workshop/step4_production.py
-uv run src/oreilly_edd_course/workshop/step4_production_solution.py
+uv run src/oreilly_edd_course/workshop/step2_demo.py
 ```
 
 ## Archive

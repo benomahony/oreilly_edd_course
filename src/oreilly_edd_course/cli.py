@@ -20,29 +20,19 @@ CONFIG = Path(".env")
 
 EXERCISES = [
     "Structured extraction & evals",
-    "Self-improving agent",
-    "CI pipeline evals",
-    "Production evals",
 ]
 EXERCISE_SCRIPTS = {
     "Structured extraction & evals": "step1_evals.py",
-    "Self-improving agent": "step2_improver.py",
-    "CI pipeline evals": "step3_ci_pipeline.py",
-    "Production evals": "step4_production.py",
 }
 
 SOLUTIONS = [
     "Structured extraction & evals",
-    "Self-improving agent",
-    "CI pipeline evals",
-    "Production evals",
 ]
 SOLUTION_SCRIPTS = {
     "Structured extraction & evals": "step1_evals_solution.py",
-    "Self-improving agent": "step2_improver_solution.py",
-    "CI pipeline evals": "step3_ci_pipeline_solution.py",
-    "Production evals": "step4_production_solution.py",
 }
+
+DEMO_SCRIPT = "step2_demo.py"
 
 
 def _require(name: str) -> None:
@@ -146,6 +136,16 @@ def exercise() -> None:
         _check_google()
     typer.echo(f"Running {script} with {provider} provider...")
     _run_with_provider(provider, "uv", "run", str(WORKSHOP / script))
+
+
+@app.command()
+def demo() -> None:
+    """Run the Step 2 demo (comprehensive evals + self-improvement + production monitoring)."""
+    provider = _provider()
+    if provider == "google":
+        _check_google()
+    typer.echo(f"Running {DEMO_SCRIPT} with {provider} provider...")
+    _run_with_provider(provider, "uv", "run", str(WORKSHOP / DEMO_SCRIPT))
 
 
 @app.command()

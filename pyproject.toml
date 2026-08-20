@@ -9,6 +9,7 @@ dependencies = [
     "pydantic>=2.12.5",
     "pydantic-ai>=1.56.0",
     "pydantic-evals>=1.56.0",
+    "lexguard[pydantic-evals]>=0.1.7",
     "rich>=14.3.2",
     "opentelemetry-sdk>=1.39.1",
     "opentelemetry-exporter-otlp-proto-http>=1.39.1",

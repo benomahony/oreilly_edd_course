@@ -38,25 +38,13 @@ infer: ## Smoke-test inference (PROVIDER=google to switch provider)
 
 # ── Workshop steps ────────────────────────────────────────────────────────────
 
-.PHONY: step1 step2 step3 step4
-step1: ## Run Step 1 (structured extraction & evals)
+.PHONY: step1 step1-solution step2
+step1: ## Run Step 1 exercise (structured extraction & evals)
 	uv run $(WORKSHOP)/step1_evals.py
-step2: ## Run Step 2 (self-improving agent)
-	uv run $(WORKSHOP)/step2_improver.py
-step3: ## Run Step 3 (CI pipeline evals)
-	uv run $(WORKSHOP)/step3_ci_pipeline.py
-step4: ## Run Step 4 (production evals / monitoring)
-	uv run $(WORKSHOP)/step4_production.py
-
-.PHONY: step1-solution step2-solution step3-solution step4-solution
 step1-solution: ## Run Step 1 solution
 	uv run $(WORKSHOP)/step1_evals_solution.py
-step2-solution: ## Run Step 2 solution
-	uv run $(WORKSHOP)/step2_improver_solution.py
-step3-solution: ## Run Step 3 solution
-	uv run $(WORKSHOP)/step3_ci_pipeline_solution.py
-step4-solution: ## Run Step 4 solution
-	uv run $(WORKSHOP)/step4_production_solution.py
+step2: ## Run Step 2 demo (comprehensive evals + self-improvement + production monitoring)
+	uv run $(WORKSHOP)/step2_demo.py
 
 # ── Observability ─────────────────────────────────────────────────────────────
 

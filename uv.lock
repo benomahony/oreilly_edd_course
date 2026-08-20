@@ -1233,6 +1233,20 @@ wheels = [
 ]
 
 [[package]]
+name = "lexguard"
+version = "0.1.7"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/a4/92/ce0dc2c52c822087ff24e2a5a3e1278cd127c2fa6e9278caddafa066841d/lexguard-0.1.7.tar.gz", hash = "sha256:30b470d8ff5d11ad6cf7741782b7fb1cadb436b98edff2a2baae65b19fca6b47", size = 1357012, upload-time = "2026-08-20T13:52:16.279Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/9b/86/ae2fc71b38637bdcb40820bca00c286eb1218ff68440b0c5881d77d93101/lexguard-0.1.7-py3-none-any.whl", hash = "sha256:a851d06eaedac8b3292cfb13504c589a5185bcb1fc8c0adaf559cb471c7c8519", size = 22366, upload-time = "2026-08-20T13:52:14.778Z" },
+]
+
+[package.optional-dependencies]
+pydantic-evals = [
+    { name = "pydantic-evals" },
+]
+
+[[package]]
 name = "logfire"
 version = "4.22.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1701,6 +1715,7 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "inquirerpy" },
+    { name = "lexguard", extra = ["pydantic-evals"] },
     { name = "openinference-instrumentation-pydantic-ai" },
     { name = "opentelemetry-exporter-otlp-proto-http" },
     { name = "opentelemetry-sdk" },
@@ -1715,6 +1730,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "inquirerpy", specifier = ">=0.3.4" },
+    { name = "lexguard", extras = ["pydantic-evals"], specifier = ">=0.1.7" },
     { name = "openinference-instrumentation-pydantic-ai", specifier = ">=0.1.0" },
     { name = "opentelemetry-exporter-otlp-proto-http", specifier = ">=1.39.1" },
     { name = "opentelemetry-sdk", specifier = ">=1.39.1" },
