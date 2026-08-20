@@ -36,7 +36,7 @@ from pydantic_ai import Agent
 from pydantic_evals import Case, Dataset
 from pydantic_evals.evaluators import EvaluatorContext, LLMJudge
 
-from lexguard import Vague
+from lexguard import Lexicon
 
 from oreilly_edd_course.providers import get_model
 from oreilly_edd_course.telemetry import init_telemetry
@@ -68,25 +68,43 @@ SEED_INSTRUCTIONS = "Extract todos from the transcript as a MeetingTodos object.
 
 # ── The custom lexicon lives in CODE — this is the source of truth ───────────
 #
-# A domain guardrail: lexguard's built-in `Vague` coverage extended with weak
-# todo phrasings. To change the policy, edit this list and send a PR — it is
-# reviewed and versioned exactly like the evaluators. The improver agent may
-# *propose* additions at runtime; they are printed as paste-able code for a
-# human to promote here, not written back automatically.
+# A domain guardrail for weak/vague todo phrasing, spelled out in full as a
+# plain `Lexicon` literal — no runtime `.extend()` composition. The entire policy
+# is visible here: to change what counts as vague, edit this list and send a PR,
+# reviewed and versioned exactly like the evaluators. Because the whole set is
+# authored (not inherited), *removing* a term is just deleting a line — there is
+# no separate "subtract from the base" problem. The improver agent may *propose*
+# additions at runtime; they are printed as paste-able code for a human to
+# promote here, not written back automatically.
 
-VAGUE_TODO = Vague.extend(
+VAGUE_TODO = Lexicon(
+    "vague_todo",
     indicates=[
+        "a few",
+        "anything",
         "asap-ish",
         "at some point",
+        "bits",
         "circle back",
         "deal with",
         "follow up on",
         "handle it",
+        "kind of",
         "look into",
+        "some",
+        "something",
         "sometime soon",
+        "sort of",
         "sort out",
+        "stuff",
+        "that thing",
+        "the usual",
+        "things",
+        "whatever",
         "when we get a chance",
+        "you know",
     ],
+    fix="resolve the referent from context or ask one clarifying question",
 )
 
 
@@ -274,20 +292,25 @@ async def run_improvement_loop(max_iterations: int = 5) -> set[str]:
 # ── Promote-to-code: emit the reviewed lexicon as paste-able source ──────────
 
 
-def propose_lexicon_code(existing: Iterable[str], proposed: Iterable[str]) -> str:
-    """Emit a paste-able `VAGUE_TODO` definition, sorted and quoted, with the
-    agent's candidates flagged. A human reviews this and pastes accepted terms
-    over the definition above — the lexicon stays code, never a data file.
+def propose_lexicon_code(lexicon: Lexicon, proposed: Iterable[str]) -> str:
+    """Emit a paste-able full `Lexicon(...)` definition, sorted and quoted, with
+    the agent's candidate terms flagged. A human reviews this and pastes the
+    accepted result over the `VAGUE_TODO` definition above — the lexicon stays a
+    self-contained code literal, never a data file.
 
     (This is a local stand-in for a future `lexguard` `Lexicon.as_code()`.)
     """
     proposed = set(proposed)
-    terms = sorted(set(existing) | proposed)
+    terms = sorted(set(lexicon.indicates) | proposed)
     lines = "\n".join(
         f"        {t!r},  # ← proposed, review me" if t in proposed else f"        {t!r},"
         for t in terms
     )
-    return "VAGUE_TODO = Vague.extend(\n    indicates=[\n" + lines + "\n    ],\n)"
+    return (
+        f"VAGUE_TODO = Lexicon(\n    {lexicon.name!r},\n    indicates=[\n"
+        + lines
+        + f"\n    ],\n    fix={lexicon.fix!r},\n)"
+    )
 
 
 # ── ACT 3: production monitoring ─────────────────────────────────────────────
@@ -419,10 +442,8 @@ async def main() -> None:
     print("=" * 70)
     if proposed:
         print("The agent proposed new vague phrasings. Review and paste the accepted")
-        print("ones over the VAGUE_TODO definition in this file (it stays code):\n")
-        # Only the terms we authored (the extend delta) — not Vague's built-ins.
-        authored = set(VAGUE_TODO.indicates) - set(Vague.indicates)
-        print(propose_lexicon_code(authored, proposed))
+        print("result over the VAGUE_TODO definition in this file (it stays code):\n")
+        print(propose_lexicon_code(VAGUE_TODO, proposed))
     else:
         print("No new lexicon terms proposed — the code lexicon already covers it.")
 
