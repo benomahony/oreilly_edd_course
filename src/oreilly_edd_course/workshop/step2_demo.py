@@ -4,39 +4,37 @@ Step 2: The Full EDD Loop — DEMO.
 A single, run-it-and-watch showcase that ties the whole eval-driven-development
 story together on the meeting-todo extractor from Step 1:
 
-  ACT 1  Comprehensive evaluation — structural + semantic (LLMJudge) + lexical
-         (a lexguard lexicon that scores each todo for vague/weak phrasing).
+  ACT 1  Comprehensive evaluation — structural (count, no-dupes) + semantic
+         (LLMJudge) + lexical: a lexguard lexicon that scores each todo's
+         wording for vague/weak phrasing.
   ACT 2  Self-improvement — run evals, collect failures, and let an improver
-         agent rewrite the extraction instructions AND grow a custom lexguard
-         lexicon of vague phrasings it spots. The guardrail co-evolves with the
-         agent: instructions get sharper, the lexicon gets more comprehensive.
+         agent rewrite the extraction INSTRUCTIONS to fix them. The agent also
+         *proposes* new vague phrasings it spots; those are surfaced as
+         paste-able code for a human to review and promote — never silently
+         written back.
   ACT 3  Production monitoring — simulate live traffic, run the cheap
          deterministic lexicon guard on 100% of it and a sampled LLMJudge,
          log to JSONL, and check for drift.
 
-Models and structural evaluators are imported from Step 1 — this demo layers
-evaluation, improvement, and monitoring on top of them.
+A note on philosophy (the point of this demo): the *instructions* are runtime
+state the loop is allowed to optimize. The *lexicon* is a policy/judgment
+artifact — what counts as "vague" — so it lives in CODE (below), reviewed,
+diffed, and versioned like the evals themselves. The agent can suggest additions,
+but a human promotes them by editing the code, not by mutating a data file.
 
     uv run src/oreilly_edd_course/workshop/step2_demo.py
 """
 
 import asyncio
-import json
 import random
-from dataclasses import dataclass
+from collections.abc import Iterable
 from datetime import date, datetime
 from pathlib import Path
 
 from pydantic import BaseModel
 from pydantic_ai import Agent
 from pydantic_evals import Case, Dataset
-from pydantic_evals.evaluators import (
-    EvaluationReason,
-    Evaluator,
-    EvaluatorContext,
-    LLMJudge,
-)
-from typing_extensions import override
+from pydantic_evals.evaluators import EvaluatorContext, LLMJudge
 
 from lexguard import Vague
 
@@ -56,7 +54,6 @@ model = get_model()
 
 WORKSHOP = Path(__file__).parent
 INSTRUCTIONS_PATH = WORKSHOP / "improver_instructions.md"
-VAGUE_TERMS_PATH = WORKSHOP / "custom_vague_terms.json"
 PROD_LOG_PATH = Path("prod_evals_log.jsonl")
 
 RUBRIC = (
@@ -68,23 +65,32 @@ RUBRIC = (
 # Deliberately weak starting point so the improvement loop has room to work.
 SEED_INSTRUCTIONS = "Extract todos from the transcript as a MeetingTodos object."
 
-# Seed vocabulary for the custom "vague todo" lexicon. The improver agent grows
-# this list from phrasings it sees in failing outputs.
-SEED_VAGUE_TERMS = [
-    "at some point",
-    "when we get a chance",
-    "circle back",
-    "look into",
-    "follow up on",
-    "sort out",
-    "deal with",
-    "handle it",
-    "sometime soon",
-    "asap-ish",
-]
+
+# ── The custom lexicon lives in CODE — this is the source of truth ───────────
+#
+# A domain guardrail: lexguard's built-in `Vague` coverage extended with weak
+# todo phrasings. To change the policy, edit this list and send a PR — it is
+# reviewed and versioned exactly like the evaluators. The improver agent may
+# *propose* additions at runtime; they are printed as paste-able code for a
+# human to promote here, not written back automatically.
+
+VAGUE_TODO = Vague.extend(
+    indicates=[
+        "asap-ish",
+        "at some point",
+        "circle back",
+        "deal with",
+        "follow up on",
+        "handle it",
+        "look into",
+        "sometime soon",
+        "sort out",
+        "when we get a chance",
+    ],
+)
 
 
-# ── Persisted, co-evolving state ─────────────────────────────────────────────
+# ── Runtime state: only the instructions are optimized by the loop ───────────
 
 
 def get_instructions() -> str:
@@ -95,24 +101,9 @@ def save_instructions(instructions: str) -> None:
     INSTRUCTIONS_PATH.write_text(instructions)
 
 
-def get_vague_terms() -> list[str]:
-    return json.loads(VAGUE_TERMS_PATH.read_text())
-
-
-def save_vague_terms(terms: list[str]) -> None:
-    VAGUE_TERMS_PATH.write_text(json.dumps(terms, indent=2) + "\n")
-
-
-def load_lexicon():
-    """Build the current 'vague todo' lexicon: lexguard's built-in Vague
-    coverage extended with the terms the agent has curated so far."""
-    return Vague.extend(indicates=get_vague_terms())
-
-
-def reset_state() -> None:
-    """Reset instructions + lexicon to their seeds so the demo is reproducible."""
+def reset_instructions() -> None:
+    """Reset to the seed so the demo is reproducible."""
     save_instructions(SEED_INSTRUCTIONS)
-    save_vague_terms(SEED_VAGUE_TERMS)
 
 
 # ── The agent under evaluation (dynamic instructions) ────────────────────────
@@ -128,39 +119,6 @@ async def extract_todos(transcript: str) -> MeetingTodos:
         instructions=get_instructions(),
     )
     return (await agent.run(transcript)).output
-
-
-# ── ACT 1: the lexical evaluator (lexguard) ──────────────────────────────────
-
-
-@dataclass
-class TodoVagueness(Evaluator):
-    """Score each todo's `what` against the current vague-phrasing lexicon.
-
-    Deterministic and free — no model call. Fails (0.0) if any todo uses vague
-    or weak wording, and reports exactly which terms fired so the improver can
-    act on them.
-    """
-
-    @override
-    async def evaluate(
-        self, ctx: EvaluatorContext[str, MeetingTodos]
-    ) -> EvaluationReason:
-        lexicon = load_lexicon()
-        offenders: list[str] = []
-        for todo in ctx.output.todos:
-            if lexicon.fires(todo.what):
-                hits = ", ".join(sorted(lexicon.hits(todo.what)))
-                offenders.append(f"{todo.who}: '{todo.what}' [{hits}]")
-
-        if offenders:
-            return EvaluationReason(
-                value=0.0,
-                reason=f"{len(offenders)} vague todo(s) — " + "; ".join(offenders),
-            )
-        return EvaluationReason(
-            value=1.0, reason=f"No vague phrasing across {len(ctx.output.todos)} todos"
-        )
 
 
 # ── Comprehensive evaluation dataset ─────────────────────────────────────────
@@ -205,24 +163,28 @@ TRANSCRIPTS = {"standup_meeting": t1, "product_planning": t2, "client_onboarding
 
 
 def build_dataset() -> Dataset[str, MeetingTodos, MeetingTodos]:
-    """Comprehensive suite: structural (count, no-dupes) + lexical (vagueness)
-    per case, plus a semantic LLMJudge across the dataset."""
+    """Comprehensive suite: structural per case, plus the lexical guard and a
+    semantic LLMJudge across the dataset.
+
+    The lexical check uses lexguard's own field selector — `field="todos[].what"`
+    scores every todo's `what` in one pass, with span-level diagnostics.
+    """
     cases = [
         Case(
             name=name,
             inputs=TRANSCRIPTS[name],
             expected_output=expected,
-            evaluators=(
-                TodoCount(expected_count=len(expected.todos)),
-                NoDuplicateTodos(),
-                TodoVagueness(),
-            ),
+            evaluators=(TodoCount(expected_count=len(expected.todos)),),
         )
         for name, expected in EXPECTED.items()
     ]
     return Dataset[str, MeetingTodos, MeetingTodos](
         cases=cases,
-        evaluators=[LLMJudge(model=model, rubric=RUBRIC)],
+        evaluators=[
+            LLMJudge(model=model, rubric=RUBRIC),
+            NoDuplicateTodos(),
+            VAGUE_TODO.absent(field="todos[].what"),
+        ],
     )
 
 
@@ -230,8 +192,8 @@ def collect_failures(report) -> list[str]:
     """Gather failing evaluators across the report.
 
     pydantic-evals routes results by value type: boolean evaluators (LLMJudge's
-    pass/fail) land in `case.assertions`, while numeric ones (our 0.0/1.0
-    structural + lexical checks) land in `case.scores`. Read both.
+    pass/fail, the lexicon guard) land in `case.assertions`, while numeric ones
+    (our 0.0/1.0 structural checks) land in `case.scores`. Read both.
     """
     failures: list[str] = []
     for c in report.cases:
@@ -244,12 +206,12 @@ def collect_failures(report) -> list[str]:
     return failures
 
 
-# ── ACT 2: the improver (rewrites instructions AND grows the lexicon) ─────────
+# ── ACT 2: the improver (rewrites instructions, PROPOSES lexicon terms) ───────
 
 
 class Improvement(BaseModel):
     instructions: str
-    new_vague_terms: list[str]
+    proposed_vague_terms: list[str]
     reason: str
 
 
@@ -262,25 +224,29 @@ async def improve(failures: list[str]) -> Improvement:
             "1. Rewrite `instructions` to fix the failures with the minimum "
             "necessary changes. Output must stay valid MeetingTodos JSON with "
             "who/what/when/criticality per todo.\n"
-            "2. In `new_vague_terms`, list any vague or weak phrasings you see in "
-            "the failing outputs that a guardrail should catch in future (short "
-            "lowercase phrases, e.g. 'circle back'). Return [] if none."
+            "2. In `proposed_vague_terms`, list any vague or weak phrasings you "
+            "see in the failing outputs that a guardrail should catch in future "
+            "(short lowercase phrases, e.g. 'circle back'). These are proposals a "
+            "human will review — return [] if none."
         ),
     )
     prompt = (
         f"Current instructions:\n{get_instructions()}\n\n"
-        f"Current vague-phrase lexicon terms:\n{get_vague_terms()}\n\n"
         f"Failures:\n" + "\n".join(failures)
     )
     return (await agent.run(prompt)).output
 
 
-async def run_improvement_loop(max_iterations: int = 5) -> None:
+async def run_improvement_loop(max_iterations: int = 5) -> set[str]:
+    """Optimize the instructions against the fixed code lexicon. Returns the set
+    of new vague terms the agent proposed along the way (for human review)."""
     dataset = build_dataset()
+    proposed: set[str] = set()
+    existing = set(VAGUE_TODO.indicates)
+
     for iteration in range(1, max_iterations + 1):
         print(f"\n─── Iteration {iteration} ───")
         print(f"  Instructions: {get_instructions()[:70]}...")
-        print(f"  Lexicon terms: {len(get_vague_terms())}")
 
         report = await dataset.evaluate(extract_todos)
         report.print(include_input=False, include_output=False, include_reasons=True)
@@ -288,19 +254,40 @@ async def run_improvement_loop(max_iterations: int = 5) -> None:
         failures = collect_failures(report)
         if not failures:
             print("\n  ✅ All evaluators pass — extraction is solid.")
-            return
+            break
 
         print(f"\n  {len(failures)} failure(s); asking the improver to fix them...")
         improvement = await improve(failures)
-
         save_instructions(improvement.instructions)
-        added = [t for t in improvement.new_vague_terms if t not in get_vague_terms()]
-        if added:
-            save_vague_terms(get_vague_terms() + added)
-            print(f"  + Grew lexicon by {len(added)}: {added}")
-        print(f"  Reason: {improvement.reason}")
 
-    print("\n  Max iterations reached.")
+        new = {t.lower() for t in improvement.proposed_vague_terms} - existing - proposed
+        if new:
+            proposed |= new
+            print(f"  Agent proposes {len(new)} lexicon term(s) for review: {sorted(new)}")
+        print(f"  Reason: {improvement.reason}")
+    else:
+        print("\n  Max iterations reached.")
+
+    return proposed
+
+
+# ── Promote-to-code: emit the reviewed lexicon as paste-able source ──────────
+
+
+def propose_lexicon_code(existing: Iterable[str], proposed: Iterable[str]) -> str:
+    """Emit a paste-able `VAGUE_TODO` definition, sorted and quoted, with the
+    agent's candidates flagged. A human reviews this and pastes accepted terms
+    over the definition above — the lexicon stays code, never a data file.
+
+    (This is a local stand-in for a future `lexguard` `Lexicon.as_code()`.)
+    """
+    proposed = set(proposed)
+    terms = sorted(set(existing) | proposed)
+    lines = "\n".join(
+        f"        {t!r},  # ← proposed, review me" if t in proposed else f"        {t!r},"
+        for t in terms
+    )
+    return "VAGUE_TODO = Vague.extend(\n    indicates=[\n" + lines + "\n    ],\n)"
 
 
 # ── ACT 3: production monitoring ─────────────────────────────────────────────
@@ -326,10 +313,11 @@ class ProductionMonitor:
         self.judge = LLMJudge(model=model, rubric=RUBRIC)
 
     def _lexicon_score(self, output: MeetingTodos) -> float:
-        lexicon = load_lexicon()
+        # Per-todo fraction clean. (lexguard's evaluator gives one collection-level
+        # verdict; a per-item score is still hand-rolled — a candidate lexguard feature.)
         if not output.todos:
             return 1.0
-        clean = sum(1 for todo in output.todos if not lexicon.fires(todo.what))
+        clean = sum(1 for todo in output.todos if not VAGUE_TODO.fires(todo.what))
         return clean / len(output.todos)
 
     async def evaluate_output(self, transcript: str, output: MeetingTodos) -> ProductionEvalResult:
@@ -419,12 +407,24 @@ async def run_production_monitoring(num_requests: int = 6) -> None:
 
 
 async def main() -> None:
-    reset_state()
+    reset_instructions()
 
     print("=" * 70)
     print("ACT 1 & 2 — COMPREHENSIVE EVALS + SELF-IMPROVEMENT")
     print("=" * 70)
-    await run_improvement_loop()
+    proposed = await run_improvement_loop()
+
+    print("\n" + "=" * 70)
+    print("PROMOTE TO CODE — review the agent's proposed lexicon terms")
+    print("=" * 70)
+    if proposed:
+        print("The agent proposed new vague phrasings. Review and paste the accepted")
+        print("ones over the VAGUE_TODO definition in this file (it stays code):\n")
+        # Only the terms we authored (the extend delta) — not Vague's built-ins.
+        authored = set(VAGUE_TODO.indicates) - set(Vague.indicates)
+        print(propose_lexicon_code(authored, proposed))
+    else:
+        print("No new lexicon terms proposed — the code lexicon already covers it.")
 
     print("\n" + "=" * 70)
     print("ACT 3 — PRODUCTION MONITORING")
@@ -433,7 +433,6 @@ async def main() -> None:
 
     print("\n" + "=" * 70)
     print(f"Final instructions:\n  {get_instructions()}")
-    print(f"Final lexicon terms ({len(get_vague_terms())}): {get_vague_terms()}")
     print("=" * 70)
 
 

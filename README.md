@@ -27,8 +27,8 @@ uv run src/oreilly_edd_course/workshop/step1_evals_solution.py
 
 A single run-it-and-watch showcase built on the Step 1 extractor:
 
-- **Comprehensive evaluation** — structural (`TodoCount`, `NoDuplicateTodos`) + semantic (`LLMJudge`) + **lexical**: a [`lexguard`](https://pypi.org/project/lexguard/) lexicon that deterministically scores each todo for vague/weak phrasing.
-- **Self-improvement** — run evals, collect failures, and let an improver agent rewrite the extraction instructions **and grow a custom `lexguard` lexicon** of vague phrasings it spots. The guardrail co-evolves with the agent.
+- **Comprehensive evaluation** — structural (`TodoCount`, `NoDuplicateTodos`) + semantic (`LLMJudge`) + **lexical**: a [`lexguard`](https://pypi.org/project/lexguard/) lexicon (`VAGUE_TODO`, defined in code) that deterministically scores each todo's wording for vague/weak phrasing.
+- **Self-improvement** — run evals, collect failures, and let an improver agent rewrite the extraction **instructions** to fix them. The lexicon is a *code* guardrail (a policy artifact, reviewed and versioned like the evals); the agent only *proposes* new vague terms, which are printed as paste-able code for a human to promote — never silently written to a data file.
 - **Production monitoring** — simulate live traffic, run the cheap deterministic lexicon guard on 100% of it and a sampled `LLMJudge`, log to JSONL, and check for drift.
 
 ```bash
