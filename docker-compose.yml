@@ -1,8 +1,0 @@
-# Local AI-native observability stack for the EDD course.
-# Arize Phoenix (single container): ingests OpenTelemetry spans over OTLP HTTP
-# (port 6006) and exposes an AI-native UI for inspecting agent traces (port 6006).
-services:
-  phoenix:
-    image: arizephoenix/phoenix:latest
-    ports:
-      - "6006:6006" # Phoenix UI + OTLP HTTP ingestion

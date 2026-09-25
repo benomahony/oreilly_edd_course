@@ -1,5 +1,6 @@
 """Simple CLI for the EDD course: setup, the worked example, and observability."""
 
+import json
 import os
 import shutil
 import subprocess
@@ -13,7 +14,7 @@ app = typer.Typer(help="Eval-Driven Development for Reliable Agents (O'Reilly co
 
 LMS = Path.home() / ".lmstudio" / "bin" / "lms"
 MODEL = "meta/muse-glimmer"
-OBS_UI = "http://localhost:6006"
+LOGFIRE_CREDENTIALS = Path(".logfire") / "logfire_credentials.json"
 CONFIG = Path(".env")
 
 EXAMPLE = Path(__file__).parent / "example.py"
@@ -63,7 +64,7 @@ def _check_google() -> None:
 
 @app.command()
 def setup() -> None:
-    """Install deps, configure the provider, and start Phoenix."""
+    """Install deps and configure the provider."""
     _require("uv")
     _run("uv", "sync")
 
@@ -75,9 +76,13 @@ def setup() -> None:
     _set_provider(provider)
     typer.echo(f"Configured provider: {provider}")
 
-    _require("docker")
-    _run("docker", "compose", "up", "-d")
-    typer.echo(f"Phoenix running at {OBS_UI}")
+    if LOGFIRE_CREDENTIALS.exists():
+        typer.echo("Logfire already configured:")
+        _run("uv", "run", "logfire", "whoami")
+    else:
+        typer.echo("Log in to Logfire, then create (or pick) a project for this course.")
+        _run("uv", "run", "logfire", "auth")
+        _run("uv", "run", "logfire", "projects", "new")
 
     if provider == "lmstudio":
         if not LMS.exists():
@@ -98,7 +103,7 @@ def setup() -> None:
 def run(
     fresh: bool = typer.Option(False, "--fresh", help="Reset the agent to the naive prompt first."),
 ) -> None:
-    """Run the worked example (evals + prompt/capability improvement loop)."""
+    """Run the evals against the current agent."""
     provider = _provider()
     if provider == "google":
         _check_google()
@@ -108,16 +113,10 @@ def run(
 
 @app.command()
 def obs() -> None:
-    """Start Phoenix and open the UI."""
-    _require("docker")
-    _run("docker", "compose", "up", "-d")
-    _run("open", OBS_UI)
-
-
-@app.command()
-def obs_down() -> None:
-    """Stop the observability stack."""
-    _run("docker", "compose", "down")
+    """Open your Logfire project (traces and online eval results)."""
+    if not LOGFIRE_CREDENTIALS.exists():
+        raise typer.BadParameter("No Logfire project yet. Run `edd setup` first.")
+    _run("open", json.loads(LOGFIRE_CREDENTIALS.read_text())["project_url"])
 
 
 if __name__ == "__main__":

@@ -1,59 +1,24 @@
-"""OpenTelemetry setup for sending agent traces to Arize Phoenix.
+"""Send agent traces and online eval results to your Logfire project.
 
-Call `init_telemetry()` at the start of a step (before creating agents) to
-send its traces to the local Phoenix instance. Uses OpenInference enrichment
-for the richest Phoenix visualizations. Warns if Phoenix isn't running.
+Call `init_telemetry()` once at startup, before running agents. `edd setup` creates
+the project and saves its write token to `.logfire/` (gitignored). Without a token,
+telemetry stays local and the example still runs.
 """
 
-import urllib.request
-
-from pydantic_ai import Agent
-
-PHOENIX_ENDPOINT = "http://localhost:6006"
+import logfire
 
 
-def _phoenix_up() -> bool:
-    """Return True if the local Phoenix instance is reachable."""
-    try:
-        with urllib.request.urlopen(f"{PHOENIX_ENDPOINT}/health", timeout=1) as response:
-            return response.status == 200
-    except Exception:
-        return False
+def _keep_evaluator_names(match: logfire.ScrubMatch) -> object:
+    # Lexguard's "UnsourcedAuthority" trips the default "auth" secret pattern; it's a name, not a secret.
+    if match.pattern_match.group(0).lower() == "auth" and "UnsourcedAuthority" in str(match.value):
+        return match.value
+    return None
 
 
-def init_telemetry(project_name: str | None = None) -> None:
-    """Point the global tracer provider at Phoenix and instrument agents."""
-    phoenix_up = _phoenix_up()
-    if not phoenix_up:
-        print(
-            f"Warning: Phoenix is not running at {PHOENIX_ENDPOINT}. "
-            "Traces won't be visible. Start it with `edd obs`."
-        )
-
-    from opentelemetry import trace
-    from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
-    from opentelemetry.sdk.resources import Resource
-    from opentelemetry.sdk.trace import TracerProvider
-    from opentelemetry.sdk.trace.export import SimpleSpanProcessor
-    from openinference.instrumentation.pydantic_ai import OpenInferenceSpanProcessor
-
-    resource = (
-        Resource.create({"openinference.project.name": project_name})
-        if project_name
-        else None
+def init_telemetry(service_name: str) -> None:
+    logfire.configure(
+        service_name=service_name,
+        send_to_logfire="if-token-present",
+        scrubbing=logfire.ScrubbingOptions(callback=_keep_evaluator_names),
     )
-    tracer_provider = TracerProvider(resource=resource)
-    trace.set_tracer_provider(tracer_provider)
-
-    # Enrich spans with OpenInference attributes (must be added before exporter)
-    tracer_provider.add_span_processor(OpenInferenceSpanProcessor())
-
-    # Export spans to Phoenix; SimpleSpanProcessor flushes immediately.
-    # Skipped when Phoenix is down, otherwise every span blocks on export retries.
-    if phoenix_up:
-        tracer_provider.add_span_processor(
-            SimpleSpanProcessor(OTLPSpanExporter(endpoint=f"{PHOENIX_ENDPOINT}/v1/traces"))
-        )
-
-    # Enable PydanticAI instrumentation
-    Agent.instrument_all()
+    logfire.instrument_pydantic_ai()

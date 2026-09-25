@@ -9,15 +9,13 @@ dependencies = [
     "pydantic>=2.12.5",
     "pydantic-ai>=2.50.0",
     "pydantic-evals>=2.50.0",
-    "opentelemetry-sdk>=1.39.1",
-    "opentelemetry-exporter-otlp-proto-http>=1.39.1",
-    "openinference-instrumentation-pydantic-ai>=0.1.0",
     "pydantic-settings>=2.12.0",
     "typer>=0.21.1",
     "inquirerpy>=0.3.4",
     "pydantic-ai-harness>=0.35.0",
-    "lexguard[pydantic-ai-harness,pydantic-evals]>=0.1.20",
+    "lexguard[pydantic-ai-harness,pydantic-evals]>=0.1.22",
     "pydantic-ai-slim[typesafe]>=2.50.0",
+    "logfire>=5.1.1",
 ]
 
 [project.scripts]

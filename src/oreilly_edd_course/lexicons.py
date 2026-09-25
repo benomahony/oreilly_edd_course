@@ -4,7 +4,7 @@ Custom lexguard lexicons for meeting todos.
 Built exactly like lexguard's shipped ones: words that indicate the concept,
 words that rule it back out, and a one-sentence fix that becomes the retry
 message when the lexicon is used as a guardrail. Kept in their own module so
-capabilities the improver authors can `from oreilly_edd_course.lexicons import ...`.
+capabilities authored at runtime can `from oreilly_edd_course.lexicons import ...`.
 """
 
 from lexguard import Actionable, Lexicon

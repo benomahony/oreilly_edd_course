@@ -1,13 +1,13 @@
 """
 Eval-Driven Development: one fully worked example.
 
-Extract action items from meeting transcripts, measure how well we do it,
-then let an improver agent fix the failures using two levers:
+Extract action items from meeting transcripts and measure how well we do it.
+This file is the fixed harness; improving the agent happens around it:
 
-  1. Prompt  — rewrite the extraction instructions (instructions.md)
-  2. Capability — author a pydantic-ai capability (a guardrail hook) with
-     pydantic-ai-harness `CapabilityCreation`. It's written to capabilities/,
-     validated, and injected into the extraction agent on the next run.
+  - Claude Code reads the eval failures and edits instructions.md or writes
+    capabilities/ (tools, guardrails, hooks). Review with `git diff`, commit to keep.
+  - The agent under test carries pydantic-ai-harness `CapabilityCreation`, so it
+    can author capabilities for itself; they're live on its next run.
 
 Lexguard word lists do double duty: the same lexicon is an offline eval
 (does the output contain vague / hypothetical / leaked wording?) and a
@@ -17,8 +17,7 @@ Flow:
   1. The system under test      — Pydantic models + extraction agent + lexguard guardrails
   2. The golden dataset          — transcripts + expected outputs
   3. The evals                   — schema → deterministic → lexguard → reference → LLM judge → operational
-  4. The improver                — prompt rewrite + capability creation
-  5. The loop                    — eval → improve → re-eval, then diff against the baseline
+  4. Run                         — evaluate, then list what's failing
 """
 
 import asyncio
@@ -60,6 +59,8 @@ from pydantic_evals.evaluators import (
     MaxDuration,
     MaxModelRequests,
 )
+from pydantic_evals.online import OnlineEvaluator
+from pydantic_evals.online_capability import OnlineEvaluation
 from pydantic_evals.reporting import EvaluationReport
 
 from oreilly_edd_course.providers import Settings, get_model
@@ -70,10 +71,9 @@ model = get_model()
 
 HERE = Path(__file__).parent
 TRANSCRIPTS = HERE / "transcripts"
-# What the improver changes — committed to git, so every improvement is a reviewable diff.
+# What gets improved — committed to git, so every improvement is a reviewable diff.
 INSTRUCTIONS_PATH = HERE / "instructions.md"
 CAPABILITIES_DIR = HERE / "capabilities"
-MAX_ITERATIONS = 3
 
 # Deliberately naive starting point (`--fresh` resets to it) — the evals will tell us what's missing.
 BASELINE_INSTRUCTIONS = "Extract the action items from this meeting transcript."
@@ -156,18 +156,19 @@ ENFORCE_TODO_WORDING = False
 if ENFORCE_TODO_WORDING:
     GUARDRAILS.append(OutputGuardrail(guard=todo_wording_guard))
 
-# Capabilities the improver authors live here. `store.load_active()` imports
+# Authored capabilities (by Claude Code or the agent itself) live here. `store.load_active()` imports
 # every active one so we can thread it into the next run.
-creation = CapabilityCreation(directory=CAPABILITIES_DIR, guidance="")  # guidance lives in the improver prompt
+creation = CapabilityCreation(directory=CAPABILITIES_DIR)
 
-extractor = Agent(model, output_type=MeetingTodos, retries=4, capabilities=GUARDRAILS)
+# The agent under test can author capabilities too: whatever it writes is live on its next run.
+extractor = Agent(model, output_type=MeetingTodos, retries=4, capabilities=[*GUARDRAILS, creation])
 
 
 async def extract_todos(transcript: str) -> MeetingTodos:
     result = await extractor.run(
         transcript,
         instructions=INSTRUCTIONS_PATH.read_text(),
-        capabilities=creation.store.load_active(),
+        capabilities=[online_evals, *creation.store.load_active()],
     )
     return result.output
 
@@ -261,6 +262,17 @@ class AssigneesAreAttendees(Evaluator[str, MeetingTodos, None]):
         strangers = sorted({t.who for t in ctx.output.todos if t.who.lower() not in attendees})
         if strangers:
             return EvaluationReason(False, f"Assignees not in attendees: {strangers}")
+        return EvaluationReason(True)
+
+
+@dataclass
+class AttendeesInTranscript(Evaluator[str, MeetingTodos, None]):
+    """Every attendee name appears in the transcript (no invented or misspelt people)."""
+
+    def evaluate(self, ctx: Ctx) -> EvaluationReason:
+        missing = [a for a in ctx.output.attendees if a not in ctx.inputs]
+        if missing:
+            return EvaluationReason(False, f"Not in transcript: {missing}")
         return EvaluationReason(True)
 
 
@@ -378,39 +390,56 @@ class OwnerRecall(Evaluator[str, MeetingTodos, None]):
         return EvaluationReason(round(score, 2), f"missed {missed}" if missed else "all found")
 
 
+# ── Online: everything that doesn't need a golden answer also runs on every real run ──
+quality_judge = LLMJudge(
+    model=model,
+    rubric="Each todo is specific, actionable, and understandable without reading the transcript.",
+)
+ONLINE_EVALUATORS = [
+    # Deterministic, reference-free
+    NoDuplicateTodos(),
+    AttendeesInTranscript(),
+    AssigneesAreAttendees(),
+    DueDatesNotBeforeMeeting(),
+    ConciseTodos(),
+    # Lexguard: per-todo wording + whole-output prose / safety bundles
+    TodoWording(),
+    LexguardEvaluator(Bloat | Servility | Overreach),
+    LexguardEvaluator(NEVER_IN_OUTPUT | Confidential),
+    # LLM-as-judge on quality (no expected output needed)
+    quality_judge,
+    # Typed judge on Jev (~0.3s, confidence per answer) — needs TYPESAFE_API_KEY
+    *([JevJudge()] if jev else []),
+]
+# Attached to the extractor: results go out as OTel `gen_ai.evaluation.result` events (see
+# them in Logfire). Cheap checks run on every run; the LLM judge on a 10% sample.
+# It skips itself inside Dataset.evaluate, so offline runs aren't evaluated twice.
+online_evals = OnlineEvaluation(
+    evaluators=[
+        OnlineEvaluator(evaluator=e, sample_rate=0.1) if e is quality_judge else e for e in ONLINE_EVALUATORS
+    ]
+)
+
+# ── Offline: the online evaluators plus the ones that need the golden answer ──
 dataset = Dataset[str, MeetingTodos, None](
     name="meeting_todos",
     cases=cases,
     evaluators=[
         # Schema: did we even get the right type back?
         IsInstance(type_name="MeetingTodos"),
-        # Deterministic, reference-free
-        NoDuplicateTodos(),
-        AssigneesAreAttendees(),
-        DueDatesNotBeforeMeeting(),
-        ConciseTodos(),
-        # Lexguard: per-todo wording + whole-output prose / safety bundles
-        TodoWording(),
-        LexguardEvaluator(Bloat | Servility | Overreach),
-        LexguardEvaluator(NEVER_IN_OUTPUT | Confidential),
+        *ONLINE_EVALUATORS,
         # Deterministic, reference-based
         MeetingDateCorrect(),
         AttendeesMatch(),
         TodoCount(),
         OwnerRecall(),
-        # LLM-as-judge: semantic checks code can't do
+        # LLM-as-judge against the golden answer
         LLMJudge(
             model=model,
             rubric="The output covers every action item in the expected output and invents none.",
             include_input=True,
             include_expected_output=True,
         ),
-        LLMJudge(
-            model=model,
-            rubric="Each todo is specific, actionable, and understandable without reading the transcript.",
-        ),
-        # Typed judge on Jev (~0.3s, confidence per answer) — needs TYPESAFE_API_KEY
-        *([JevJudge()] if jev else []),
         # Operational: latency and cost (retries from guardrails show up here).
         # A local model serves one case at a time, so each case waits for the others.
         MaxDuration(seconds=90 if Settings().provider == "google" else 1800),
@@ -426,105 +455,12 @@ def summarise_failures(report: EvaluationReport) -> list[str]:
             if not result.value:
                 failures.append(f"{case.name} › {name}: {result.reason}")
         for name, result in case.scores.items():
-            # Skip lexguard's density scores (no reason attached) — its assertions cover them.
-            if result.value < 1 and result.reason:
+            if result.value < 1:
                 failures.append(f"{case.name} › {name}={result.value}: {result.reason}")
     return failures
 
 
-# ═══ 4. The improver ═══════════════════════════════════════════════════════
-# Two levers: rewrite the prompt (judgement calls) or author a capability
-# (mechanical rules the extractor can be forced to obey at runtime).
-
-
-class PromptChange(BaseModel):
-    instructions: str = Field(description="The full, updated extraction instructions")
-    reason: str = Field(description="What you changed and why, including any capability you authored")
-
-
-IMPROVER_INSTRUCTIONS = f"""\
-You improve a meeting-transcript extraction agent based on eval failures.
-
-You have two levers:
-
-1. PROMPT — return updated extraction instructions. Use this for judgement:
-   what counts as an action item, how to phrase them, how to pick dates and priorities.
-   Make the minimum changes needed; keep what already works.
-
-2. CAPABILITY — call `author_capability(name, code)` to add a runtime guardrail.
-   Use this for rules that code can check mechanically on the output
-   (e.g. duplicates, assignees missing from attendees, due dates before the meeting).
-   The capability runs after the extractor's output validates; raising ModelRetry
-   sends your message back to the extractor, which then corrects itself.
-   Only author one for a FAILING reference-free eval (NoDuplicateTodos,
-   AssigneesAreAttendees, DueDatesNotBeforeMeeting, ConciseTodos, or a lexguard
-   lexicon such as Vague / Hypothetical / Completion / Hedging / Slop, or our custom
-   TodoVerb / StatusUpdate / VagueOwner) — the guardrail never sees the expected
-   answer. Don't re-author a capability that's already active.
-
-   Failing lexguard evals promote straight to guardrails: import the same lexicon
-   and reject the output when `lexicon.verdict(text).passed` is False, passing
-   `verdict.reason` (which includes lexguard's suggested fix) to ModelRetry.
-   Shipped lexicons come from `lexguard`; the custom ones from
-   `oreilly_edd_course.lexicons`. TodoVerb and StatusUpdate check `todo.what`,
-   VagueOwner checks `todo.who`.
-
-Capability code must define exactly one AbstractCapability subclass with a
-no-argument constructor. The output is a MeetingTodos object (use attribute
-access; don't import it). Template:
-
-```python
-from pydantic_ai.capabilities import AbstractCapability
-from pydantic_ai.exceptions import ModelRetry
-
-
-class RequireAttendees(AbstractCapability):
-    async def after_output_validate(self, ctx, *, output_context, output):
-        if not output.attendees:
-            raise ModelRetry("attendees is empty. List everyone who spoke in the meeting.")
-        return output
-```
-
-Promoting a lexguard eval (e.g. a failing Vague assertion) to a guardrail:
-
-```python
-from lexguard import Vague
-from pydantic_ai.capabilities import AbstractCapability
-from pydantic_ai.exceptions import ModelRetry
-
-
-class NoVagueTodos(AbstractCapability):
-    async def after_output_validate(self, ctx, *, output_context, output):
-        for todo in output.todos:
-            verdict = Vague.verdict(todo.what)
-            if not verdict.passed:
-                raise ModelRetry(f"Todo {{todo.what!r}}: {{verdict.reason}}")
-        return output
-```
-
-The extractor's output schema:
-{MeetingTodos.model_json_schema()}
-"""
-
-improver = Agent(
-    model,
-    output_type=PromptChange,
-    instructions=IMPROVER_INSTRUCTIONS,
-    capabilities=[creation],
-)
-
-
-async def improve(failures: list[str]) -> PromptChange:
-    active = [c.name for c in creation.store.list_all() if c.status == "active" and not c.last_error]
-    prompt = (
-        f"Current instructions:\n{INSTRUCTIONS_PATH.read_text()}\n\n"
-        f"Active capabilities: {active or 'none'}\n\n"
-        "Eval failures:\n" + "\n".join(f"- {f}" for f in failures)
-    )
-    return (await improver.run(prompt)).output
-
-
-# ═══ 5. The loop ═══════════════════════════════════════════════════════════
+# ═══ 4. Run ═══════════════════════════════════════════════════════════════
 
 
 def reset() -> None:
@@ -542,33 +478,16 @@ async def evaluate(label: str) -> EvaluationReport:
 
 
 async def main(fresh: bool = False) -> None:
-    # Improvements accumulate: each run starts from the committed agent and builds on it.
     if fresh or not INSTRUCTIONS_PATH.exists():
         reset()
-    baseline = await evaluate("baseline")
-    report = baseline
+    report = await evaluate("meeting_todos")
 
-    for iteration in range(1, MAX_ITERATIONS + 1):
-        failures = summarise_failures(report)
-        if not failures:
-            print("\nAll evals pass.")
-            break
-
-        print(f"\n── Improving ({iteration}/{MAX_ITERATIONS}): {len(failures)} failure(s) ──")
-        change = await improve(failures)
-        INSTRUCTIONS_PATH.write_text(change.instructions)
-        print(f"Reason: {change.reason}")
-        for cap in creation.store.list_all():
-            print(f"  capability {cap.name} [{cap.status}]{' ERROR: ' + cap.last_error if cap.last_error else ''}")
-
-        report = await evaluate(f"iteration {iteration}")
-
-    print("\n══ Baseline → final ══")
-    report.print(baseline=baseline)
-    print(f"\nReview what the improver changed:  git diff {HERE.relative_to(Path.cwd())}")
-    print("Commit to keep the improvements, or `git checkout` to throw them away.")
+    failures = summarise_failures(report)
+    print(f"\n{len(failures)} failure(s)" if failures else "\nAll evals pass.")
+    for failure in failures:
+        print(f"  - {failure}")
 
 
 if __name__ == "__main__":
-    init_telemetry(project_name="edd-example")
+    init_telemetry(service_name="meeting-todos")
     asyncio.run(main(fresh="--fresh" in sys.argv))

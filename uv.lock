@@ -904,11 +904,11 @@ wheels = [
 
 [[package]]
 name = "lexguard"
-version = "0.1.21"
+version = "0.1.22"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/e1/1e/88d231b610c19345e7567babcce3cb50216f05eb74782af77a1e8f5b28ea/lexguard-0.1.21.tar.gz", hash = "sha256:a0be395598f5cc2b17876fbc2e9f3f4b94465c3811bdeaebaf41ed3839a296fc", size = 1406944, upload-time = "2026-09-25T14:56:47.162Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/c7/f4/09ca62b6fe0333f3be2a69fcf05f8e566ada622a5939960e4756a8ae2306/lexguard-0.1.22.tar.gz", hash = "sha256:3106b9543a2d09db7ce8d1d3b7aa4550a7ce8926291bde469c1b339d975f1652", size = 1412459, upload-time = "2026-09-25T16:41:06.622Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/7a/8e/65c036e8e4ce9d8c06ad2e814f84c7eb5b2e0473252ec33d30ef25f2aca2/lexguard-0.1.21-py3-none-any.whl", hash = "sha256:9493bc577c54fb9a6c2b4f9e3f266db15b6521ac57f45d6aeaff090d091effb2", size = 41077, upload-time = "2026-09-25T14:56:45.643Z" },
+    { url = "https://files.pythonhosted.org/packages/de/92/91c8f82c4492f3b57866ff9739ee3a0b0c11ee33f5ac45e1e2d058d9b023/lexguard-0.1.22-py3-none-any.whl", hash = "sha256:79897bb04dbb89de0dd7f9e3aef929445fc6afadfb3004060a0c9d4526977b86", size = 42193, upload-time = "2026-09-25T16:41:05.103Z" },
 ]
 
 [package.optional-dependencies]
@@ -1034,48 +1034,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/7c/91/2d5722388a50cc86e162779df5fbfe0afa652a6e2d5c9ee616e081a82098/openai-3.19.2.tar.gz", hash = "sha256:de185f9834ad064d965ec42bd0766731cf66bceea16a7670294a835d207019e6", size = 1716953, upload-time = "2026-09-24T00:06:07.315Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/bd/20/4fe123e60525375878c67d1d8d051c9c5dec81cc56a579ba9304ca743303/openai-3.19.2-py3-none-any.whl", hash = "sha256:66247fcd07266e72536e90656dc27f3b0bb1e9d8696d4013fc55402c0b96a5c2", size = 2071459, upload-time = "2026-09-24T00:06:05.416Z" },
-]
-
-[[package]]
-name = "openinference-instrumentation"
-version = "0.1.66"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "openinference-semantic-conventions" },
-    { name = "opentelemetry-api" },
-    { name = "opentelemetry-sdk" },
-    { name = "wrapt" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/31/71/3c4d73b3fc3eee1870bc245bfcd85768a8eb8c996d456ea3f44889595bf7/openinference_instrumentation-0.1.66.tar.gz", hash = "sha256:e0b01776fd5b1699ce720f6241bd8bc77286c0a7aa7a19f8f13ddd6ffe725c07", size = 44000, upload-time = "2026-09-24T03:52:46.106Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/7e/7d/98aab8f8428c747cc9369f261713e5f21a93910acc22f65be5e30e4b42e9/openinference_instrumentation-0.1.66-py3-none-any.whl", hash = "sha256:6d01a0f62aaf83c771c84bb919bf49f36ec6eee074552c61cc5c311899467326", size = 51738, upload-time = "2026-09-24T03:52:44.522Z" },
-]
-
-[[package]]
-name = "openinference-instrumentation-pydantic-ai"
-version = "0.1.27"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "openinference-instrumentation" },
-    { name = "openinference-semantic-conventions" },
-    { name = "opentelemetry-api" },
-    { name = "opentelemetry-instrumentation" },
-    { name = "opentelemetry-semantic-conventions" },
-    { name = "typing-extensions" },
-    { name = "wrapt" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/59/88/9d3aff1643cdc20a3aa9ede1167cf00f6222c3af87cbdf2e5c9c7b01c038/openinference_instrumentation_pydantic_ai-0.1.27.tar.gz", hash = "sha256:7f5eb6841e919c50ba46a61b689717ea9ed4b3ae4bac733609f4765cc3388538", size = 25045, upload-time = "2026-09-10T05:43:21.388Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/e3/21/716ff7f048e5db0d9119bc27ed172e68c481e2c4e3333771eed30bbf59a3/openinference_instrumentation_pydantic_ai-0.1.27-py3-none-any.whl", hash = "sha256:65737aeba739cc233d03456b85f4c1d1a48c2ce6c2269f3f535092df8e3c5c39", size = 17123, upload-time = "2026-09-10T05:43:19.662Z" },
-]
-
-[[package]]
-name = "openinference-semantic-conventions"
-version = "0.1.39"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/47/10/7c1628bd969d2540ba3850df19e698b73ee7d27277d2e7a3de1dfd185a33/openinference_semantic_conventions-0.1.39.tar.gz", hash = "sha256:e7ca74d297f9fa166c5bad871195e24582da35861039ccb459103cda81a354ad", size = 14590, upload-time = "2026-09-24T03:52:38.667Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/9a/19/54eec742c937c0ed0de2b9d1ee679d7a502934e31bbd1ff4772322df0e62/openinference_semantic_conventions-0.1.39-py3-none-any.whl", hash = "sha256:2c98d7b9d2ce8b19fbd97d6a496a781fd32d7f31ea63575f1c0cbf8f349b29fa", size = 11701, upload-time = "2026-09-24T03:52:37.413Z" },
 ]
 
 [[package]]
@@ -1206,9 +1164,7 @@ source = { editable = "." }
 dependencies = [
     { name = "inquirerpy" },
     { name = "lexguard", extra = ["pydantic-ai-harness", "pydantic-evals"] },
-    { name = "openinference-instrumentation-pydantic-ai" },
-    { name = "opentelemetry-exporter-otlp-proto-http" },
-    { name = "opentelemetry-sdk" },
+    { name = "logfire" },
     { name = "pydantic" },
     { name = "pydantic-ai" },
     { name = "pydantic-ai-harness" },
@@ -1221,10 +1177,8 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "inquirerpy", specifier = ">=0.3.4" },
-    { name = "lexguard", extras = ["pydantic-ai-harness", "pydantic-evals"], specifier = ">=0.1.20" },
-    { name = "openinference-instrumentation-pydantic-ai", specifier = ">=0.1.0" },
-    { name = "opentelemetry-exporter-otlp-proto-http", specifier = ">=1.39.1" },
-    { name = "opentelemetry-sdk", specifier = ">=1.39.1" },
+    { name = "lexguard", extras = ["pydantic-ai-harness", "pydantic-evals"], specifier = ">=0.1.22" },
+    { name = "logfire", specifier = ">=5.1.1" },
     { name = "pydantic", specifier = ">=2.12.5" },
     { name = "pydantic-ai", specifier = ">=2.50.0" },
     { name = "pydantic-ai-harness", specifier = ">=0.35.0" },
