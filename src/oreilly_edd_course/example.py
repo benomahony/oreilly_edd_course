@@ -4,9 +4,9 @@ Eval-Driven Development: one fully worked example.
 Extract action items from meeting transcripts, measure how well we do it,
 then let an improver agent fix the failures using two levers:
 
-  1. Prompt  — rewrite the extraction instructions (agent/instructions.md)
+  1. Prompt  — rewrite the extraction instructions (instructions.md)
   2. Capability — author a pydantic-ai capability (a guardrail hook) with
-     pydantic-ai-harness `CapabilityCreation`. It's written to agent/capabilities/,
+     pydantic-ai-harness `CapabilityCreation`. It's written to capabilities/,
      validated, and injected into the extraction agent on the next run.
 
 Lexguard word lists do double duty: the same lexicon is an offline eval
@@ -71,9 +71,8 @@ model = get_model()
 HERE = Path(__file__).parent
 TRANSCRIPTS = HERE / "transcripts"
 # What the improver changes — committed to git, so every improvement is a reviewable diff.
-AGENT_DIR = HERE / "agent"
-INSTRUCTIONS_PATH = AGENT_DIR / "instructions.md"
-CAPABILITIES_DIR = AGENT_DIR / "capabilities"
+INSTRUCTIONS_PATH = HERE / "instructions.md"
+CAPABILITIES_DIR = HERE / "capabilities"
 MAX_ITERATIONS = 3
 
 # Deliberately naive starting point (`--fresh` resets to it) — the evals will tell us what's missing.
@@ -531,7 +530,6 @@ async def improve(failures: list[str]) -> PromptChange:
 def reset() -> None:
     """Back to the naive prompt with no authored capabilities (`--fresh`)."""
     shutil.rmtree(CAPABILITIES_DIR, ignore_errors=True)
-    AGENT_DIR.mkdir(exist_ok=True)
     INSTRUCTIONS_PATH.write_text(BASELINE_INSTRUCTIONS)
 
 
@@ -567,7 +565,7 @@ async def main(fresh: bool = False) -> None:
 
     print("\n══ Baseline → final ══")
     report.print(baseline=baseline)
-    print(f"\nReview what the improver changed:  git diff {AGENT_DIR.relative_to(Path.cwd())}")
+    print(f"\nReview what the improver changed:  git diff {HERE.relative_to(Path.cwd())}")
     print("Commit to keep the improvements, or `git checkout` to throw them away.")
 
 

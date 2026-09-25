@@ -43,15 +43,15 @@ in five sections:
    | Typed judge | `JevJudge` on TypeSafe's [Jev](https://pydantic.dev/docs/ai/models/typesafe/): yes/no questions with a confidence each (set `TYPESAFE_API_KEY`) |
    | Operational | `MaxDuration`, `MaxModelRequests` |
 4. **Improver** — an agent with two levers:
-   - *Prompt*: returns new instructions, written to `agent/instructions.md`.
+   - *Prompt*: returns new instructions, written to `instructions.md`.
    - *Capability*: calls `author_capability(name, code)` to write a guardrail
      (an `AbstractCapability` with an `after_output_validate` hook that raises
-     `ModelRetry`) to `agent/capabilities/`. It's validated immediately and
+     `ModelRetry`) to `capabilities/`. It's validated immediately and
      injected into the extractor on the next run via `creation.store.load_active()`.
      A failing lexguard eval promotes straight to a guardrail using the same lexicon.
 5. **Loop** — baseline eval → improve → re-eval (up to 3 times), then a diff of
    the final report against the baseline.
 
-`agent/` is committed: each run builds on it, `git diff src/oreilly_edd_course/agent/`
+`instructions.md` and `capabilities/` are committed: each run builds on them, `git diff src/oreilly_edd_course/`
 shows what the improver changed, and committing keeps it. `--fresh` resets to the naive
 prompt with no capabilities.
