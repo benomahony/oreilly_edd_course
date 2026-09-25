@@ -23,7 +23,8 @@ def _phoenix_up() -> bool:
 
 def init_telemetry(project_name: str | None = None) -> None:
     """Point the global tracer provider at Phoenix and instrument agents."""
-    if not _phoenix_up():
+    phoenix_up = _phoenix_up()
+    if not phoenix_up:
         print(
             f"Warning: Phoenix is not running at {PHOENIX_ENDPOINT}. "
             "Traces won't be visible. Start it with `edd obs`."
@@ -48,9 +49,11 @@ def init_telemetry(project_name: str | None = None) -> None:
     tracer_provider.add_span_processor(OpenInferenceSpanProcessor())
 
     # Export spans to Phoenix; SimpleSpanProcessor flushes immediately.
-    tracer_provider.add_span_processor(
-        SimpleSpanProcessor(OTLPSpanExporter(endpoint=f"{PHOENIX_ENDPOINT}/v1/traces"))
-    )
+    # Skipped when Phoenix is down, otherwise every span blocks on export retries.
+    if phoenix_up:
+        tracer_provider.add_span_processor(
+            SimpleSpanProcessor(OTLPSpanExporter(endpoint=f"{PHOENIX_ENDPOINT}/v1/traces"))
+        )
 
     # Enable PydanticAI instrumentation
     Agent.instrument_all()

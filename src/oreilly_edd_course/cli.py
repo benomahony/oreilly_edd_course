@@ -1,4 +1,4 @@
-"""Simple CLI for the EDD course: setup, workshop steps, and observability."""
+"""Simple CLI for the EDD course: setup, the worked example, and observability."""
 
 import os
 import shutil
@@ -8,41 +8,15 @@ from pathlib import Path
 import typer
 from InquirerPy import inquirer
 
-from oreilly_edd_course.providers import Settings
 
-app = typer.Typer(help="O'Reilly EDD course CLI", no_args_is_help=True)
+app = typer.Typer(help="Eval-Driven Development for Reliable Agents (O'Reilly course)", no_args_is_help=True)
 
 LMS = Path.home() / ".lmstudio" / "bin" / "lms"
 MODEL = "meta/muse-glimmer"
-WORKSHOP = Path(__file__).parent / "workshop"
 OBS_UI = "http://localhost:6006"
 CONFIG = Path(".env")
 
-EXERCISES = [
-    "Structured extraction & evals",
-    "Self-improving agent",
-    "CI pipeline evals",
-    "Production evals",
-]
-EXERCISE_SCRIPTS = {
-    "Structured extraction & evals": "step1_evals.py",
-    "Self-improving agent": "step2_improver.py",
-    "CI pipeline evals": "step3_ci_pipeline.py",
-    "Production evals": "step4_production.py",
-}
-
-SOLUTIONS = [
-    "Structured extraction & evals",
-    "Self-improving agent",
-    "CI pipeline evals",
-    "Production evals",
-]
-SOLUTION_SCRIPTS = {
-    "Structured extraction & evals": "step1_evals_solution.py",
-    "Self-improving agent": "step2_improver_solution.py",
-    "CI pipeline evals": "step3_ci_pipeline_solution.py",
-    "Production evals": "step4_production_solution.py",
-}
+EXAMPLE = Path(__file__).parent / "example.py"
 
 
 def _require(name: str) -> None:
@@ -121,31 +95,15 @@ def setup() -> None:
 
 
 @app.command()
-def solutions() -> None:
-    """Run a workshop solution with the configured provider."""
-    choice = inquirer.select(
-        message="Select solution:", choices=SOLUTIONS, default=SOLUTIONS[0]
-    ).execute()
-    script = SOLUTION_SCRIPTS[choice]
+def run(
+    fresh: bool = typer.Option(False, "--fresh", help="Reset the agent to the naive prompt first."),
+) -> None:
+    """Run the worked example (evals + prompt/capability improvement loop)."""
     provider = _provider()
     if provider == "google":
         _check_google()
-    typer.echo(f"Running {script} with {provider} provider...")
-    _run_with_provider(provider, "uv", "run", str(WORKSHOP / script))
-
-
-@app.command()
-def exercise() -> None:
-    """Run a workshop exercise with the configured provider."""
-    choice = inquirer.select(
-        message="Select exercise:", choices=EXERCISES, default=EXERCISES[0]
-    ).execute()
-    script = EXERCISE_SCRIPTS[choice]
-    provider = _provider()
-    if provider == "google":
-        _check_google()
-    typer.echo(f"Running {script} with {provider} provider...")
-    _run_with_provider(provider, "uv", "run", str(WORKSHOP / script))
+    typer.echo(f"Running {EXAMPLE.name} with {provider} provider...")
+    _run_with_provider(provider, "uv", "run", str(EXAMPLE), *(["--fresh"] if fresh else []))
 
 
 @app.command()

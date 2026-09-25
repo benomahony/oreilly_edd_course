@@ -1,56 +1,57 @@
-# O'REILLY EDD COURSE
+# Eval-Driven Development for Reliable Agents (O'Reilly)
 
-Exercises from the O'Reilly Eval-Driven Development course.
+One fully worked example of Eval-Driven Development: extract action items from
+meeting transcripts, measure it with a layered eval suite, then let an improver
+agent fix the failures — by rewriting the prompt **and** by authoring runtime
+capabilities with [`CapabilityCreation`](https://pydantic.dev/docs/ai/harness/capability-creation/).
+[Lexguard](https://github.com/benomahony/lexguard) lexicons do double duty as offline
+evals and runtime guardrails.
 
 ## Setup
 
 ```bash
-uv sync
+uv run edd setup   # installs deps, picks a provider (google / lmstudio), starts Phoenix
 ```
 
-Install [LM Studio](https://lmstudio.ai/), download a model (e.g., `meta/muse-glimmer`), start the local server at `http://localhost:1234`.
-
-## Workshop
-
-Four progressive steps in `src/oreilly_edd_course/workshop/`. Each has an exercise file (with `TODO` markers) and a solution.
-
-### Step 1: Structured Extraction & Evals
-
-Define `Todo` and `MeetingTodos` Pydantic models, then evaluate extraction accuracy using `pydantic-evals`: `EqualsExpected`, `LLMJudge`, and custom evaluators.
+## Run
 
 ```bash
-uv run src/oreilly_edd_course/workshop/step1_evals.py
-uv run src/oreilly_edd_course/workshop/step1_evals_solution.py
+uv run edd run          # improve the committed agent
+uv run edd run --fresh  # start over from the naive prompt
+uv run edd obs     # open Phoenix to inspect the traces
 ```
 
-### Step 2: Self-Improving Agent
+Everything lives in [`src/oreilly_edd_course/example.py`](src/oreilly_edd_course/example.py),
+in five sections:
 
-The eval-feedback-improve loop: run evals on structured extraction → collect failures → improver rewrites instructions → repeat.
-Imports `extract_todos`, `Todo`, `MeetingTodos`, and transcripts from Step 1, then re-runs the extraction agent with improved instructions.
+1. **System under test** — `Todo` / `MeetingTodos` Pydantic models and the extraction agent,
+   with always-on lexguard guardrails:
+   - `InputGuardrail` — hard-fails on prompt `Injection` in the transcript.
+   - `OutputGuardrail(lexguard_guard(Leakage))` — self-reference, system-prompt leaks,
+     injection echoes, placeholders → retry with lexguard's fix.
+   - `ENFORCE_TODO_WORDING = True` also enforces the per-todo lexicons at runtime.
+2. **Golden dataset** — three transcripts with expected outputs.
+3. **Evals**, cheapest first:
+   | Layer | Evaluators |
+   | --- | --- |
+   | Schema | Pydantic validation (agent retries), `IsInstance` |
+   | Deterministic, reference-free | `NoDuplicateTodos`, `AssigneesAreAttendees`, `DueDatesNotBeforeMeeting`, `ConciseTodos` |
+   | Lexguard | per-todo `Vague`, `Hypothetical`, `Completion`, `ConditionalTrigger`, `Past`, `Hedging`; whole-output `Bloat`, `Servility`, `Overreach`, `Leakage`, `Confidential` |
+   | Custom lexguard ([`lexicons.py`](src/oreilly_edd_course/lexicons.py)) | `TodoVerb` (extends `Actionable`, must be present), `StatusUpdate` (with `rules_out`), `VagueOwner` (on `who`) |
+   | Deterministic, reference-based | `MeetingDateCorrect`, `AttendeesMatch`, `TodoCount`, `OwnerRecall` (score) |
+   | LLM-as-judge | coverage vs. expected output, todo quality |
+   | Typed judge | `JevJudge` on TypeSafe's [Jev](https://pydantic.dev/docs/ai/models/typesafe/): yes/no questions with a confidence each (set `TYPESAFE_API_KEY`) |
+   | Operational | `MaxDuration`, `MaxModelRequests` |
+4. **Improver** — an agent with two levers:
+   - *Prompt*: returns new instructions, written to `agent/instructions.md`.
+   - *Capability*: calls `author_capability(name, code)` to write a guardrail
+     (an `AbstractCapability` with an `after_output_validate` hook that raises
+     `ModelRetry`) to `agent/capabilities/`. It's validated immediately and
+     injected into the extractor on the next run via `creation.store.load_active()`.
+     A failing lexguard eval promotes straight to a guardrail using the same lexicon.
+5. **Loop** — baseline eval → improve → re-eval (up to 3 times), then a diff of
+   the final report against the baseline.
 
-```bash
-uv run src/oreilly_edd_course/workshop/step2_improver.py
-uv run src/oreilly_edd_course/workshop/step2_improver_solution.py
-```
-
-### Step 3: CI Pipeline Evals
-
-Run evals as a CI gate before deploying: threshold-based pass/fail, regression detection, JSON export.
-
-```bash
-uv run src/oreilly_edd_course/workshop/step3_ci_pipeline.py
-uv run src/oreilly_edd_course/workshop/step3_ci_pipeline_solution.py
-```
-
-### Step 4: Production Evals (Monitoring)
-
-Monitor live agent outputs after deploy: sample traffic, LLMJudge on real outputs, track scores over time, detect drift.
-
-```bash
-uv run src/oreilly_edd_course/workshop/step4_production.py
-uv run src/oreilly_edd_course/workshop/step4_production_solution.py
-```
-
-## Archive
-
-Original exercise files from the first course are in `src/oreilly_edd_course/archive/` for reference. These use `main_solution.py` and `evals_solution.py` with the first iteration of the structured extraction approach.
+`agent/` is committed: each run builds on it, `git diff src/oreilly_edd_course/agent/`
+shows what the improver changed, and committing keeps it. `--fresh` resets to the naive
+prompt with no capabilities.
