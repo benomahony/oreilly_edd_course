@@ -103,7 +103,7 @@ def setup() -> None:
 def run(
     fresh: bool = typer.Option(False, "--fresh", help="Reset the agent to the naive prompt first."),
 ) -> None:
-    """Run the evals against the current agent."""
+    """Run the evals and the improvement loop against the current agent."""
     provider = _provider()
     if provider == "google":
         _check_google()

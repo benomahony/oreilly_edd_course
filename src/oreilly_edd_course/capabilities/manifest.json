@@ -1,0 +1,25 @@
+{
+  "capabilities": [
+    {
+      "name": "no_hypothetical_todos",
+      "module_file": "no_hypothetical_todos.py",
+      "class_name": "NoHypotheticalTodos",
+      "status": "active",
+      "last_error": null
+    },
+    {
+      "name": "concise_todos",
+      "module_file": "concise_todos.py",
+      "class_name": "ConciseTodos",
+      "status": "active",
+      "last_error": null
+    },
+    {
+      "name": "enforce_todo_verb",
+      "module_file": "enforce_todo_verb.py",
+      "class_name": "EnforceTodoVerb",
+      "status": "active",
+      "last_error": null
+    }
+  ]
+}

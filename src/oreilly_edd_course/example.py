@@ -1,13 +1,15 @@
 """
 Eval-Driven Development: one fully worked example.
 
-Extract action items from meeting transcripts and measure how well we do it.
-This file is the fixed harness; improving the agent happens around it:
+Extract action items from meeting transcripts, measure how well we do it, then let
+an improver agent fix the failures:
 
-  - Claude Code reads the eval failures and edits instructions.md or writes
-    capabilities/ (tools, guardrails, hooks). Review with `git diff`, commit to keep.
-  - The agent under test carries pydantic-ai-harness `CapabilityCreation`, so it
-    can author capabilities for itself; they're live on its next run.
+  - Prompt — rewrite the extraction instructions (instructions.md)
+  - Capability — author tools, guardrails or hooks with pydantic-ai-harness
+    `CapabilityCreation`, written to capabilities/ and live on the extractor's next run.
+    The extractor carries CapabilityCreation too, so it can author its own.
+
+Review what changed with `git diff`; commit to keep it.
 
 Lexguard word lists do double duty: the same lexicon is an offline eval
 (does the output contain vague / hypothetical / leaked wording?) and a
@@ -17,7 +19,8 @@ Flow:
   1. The system under test      — Pydantic models + extraction agent + lexguard guardrails
   2. The golden dataset          — transcripts + expected outputs
   3. The evals                   — schema → deterministic → lexguard → reference → LLM judge → operational
-  4. Run                         — evaluate, then list what's failing
+  4. The improver                — prompt rewrite + capability creation
+  5. The loop                    — eval → improve → re-eval, then diff against the baseline
 """
 
 import asyncio
@@ -71,6 +74,7 @@ model = get_model()
 
 HERE = Path(__file__).parent
 TRANSCRIPTS = HERE / "transcripts"
+MAX_ITERATIONS = 3
 # What gets improved — committed to git, so every improvement is a reviewable diff.
 INSTRUCTIONS_PATH = HERE / "instructions.md"
 CAPABILITIES_DIR = HERE / "capabilities"
@@ -156,7 +160,7 @@ ENFORCE_TODO_WORDING = False
 if ENFORCE_TODO_WORDING:
     GUARDRAILS.append(OutputGuardrail(guard=todo_wording_guard))
 
-# Authored capabilities (by Claude Code or the agent itself) live here. `store.load_active()` imports
+# Authored capabilities (by the improver or the extractor itself) live here. `store.load_active()` imports
 # every active one so we can thread it into the next run.
 creation = CapabilityCreation(directory=CAPABILITIES_DIR)
 
@@ -460,7 +464,95 @@ def summarise_failures(report: EvaluationReport) -> list[str]:
     return failures
 
 
-# ═══ 4. Run ═══════════════════════════════════════════════════════════════
+# ═══ 4. The improver ═══════════════════════════════════════════════════════
+# An agent reads the eval failures and pulls two levers: rewrite the prompt, or author
+# capabilities (tools, guardrails, hooks). It also reviews what the extractor wrote for itself.
+
+
+class PromptChange(BaseModel):
+    instructions: str = Field(description="The full, updated extraction instructions")
+    reason: str = Field(description="What you changed and why, including any capability you authored")
+
+
+IMPROVER_INSTRUCTIONS = f"""\
+You improve a meeting-transcript extraction agent based on eval failures.
+
+1. PROMPT — return updated extraction instructions. Use this for judgement: what counts as
+   an action item, owners, phrasing, dates and priorities. Make the minimum changes needed;
+   keep what already works.
+
+2. CAPABILITY — call `author_capability(name, code)` to give the extractor something a
+   prompt can't: any pydantic-ai capability, live on its next run.
+   - A TOOL (override `get_toolset`) when the model keeps getting something wrong that code
+     gets right, e.g. date arithmetic or parsing speakers out of the transcript. Tools cost
+     extra model requests, which MaxModelRequests measures.
+   - A GUARDRAIL (override `after_output_validate`, raise ModelRetry) for a FAILING
+     reference-free eval: NoDuplicateTodos, AttendeesInTranscript, AssigneesAreAttendees,
+     DueDatesNotBeforeMeeting, ConciseTodos, or a lexguard lexicon (Vague, Hypothetical,
+     Completion, Hedging, Slop... or our custom TodoVerb / StatusUpdate / VagueOwner).
+     Promote a lexguard eval with the same lexicon: `lexicon.verdict(text)`, and pass
+     `verdict.reason` (it includes lexguard's fix) to ModelRetry. Shipped lexicons come from
+     `lexguard`, custom ones from `oreilly_edd_course.lexicons`.
+   Don't re-author a capability that's already active.
+
+3. REVIEW — the extractor can author capabilities for itself. Use
+   `list_authored_capabilities` and `disable_authored_capability` on any that aren't helping.
+
+Capability code must define exactly one AbstractCapability subclass with a no-argument
+constructor. The output is a MeetingTodos object (use attribute access; don't import it).
+
+A tool:
+
+```python
+from pydantic_ai.capabilities import AbstractCapability
+from pydantic_ai.toolsets import FunctionToolset
+
+
+def word_count(text: str) -> int:
+    \'\'\'Count the words in a piece of text.\'\'\'
+    return len(text.split())
+
+
+class WordCountTool(AbstractCapability):
+    def get_toolset(self):
+        return FunctionToolset(tools=[word_count])
+```
+
+A guardrail promoted from a lexguard eval:
+
+```python
+from lexguard import Vague
+from pydantic_ai.capabilities import AbstractCapability
+from pydantic_ai.exceptions import ModelRetry
+
+
+class NoVagueTodos(AbstractCapability):
+    async def after_output_validate(self, ctx, *, output_context, output):
+        for todo in output.todos:
+            verdict = Vague.verdict(todo.what)
+            if not verdict.passed:
+                raise ModelRetry(f"Todo {{todo.what!r}}: {{verdict.reason}}")
+        return output
+```
+
+The extractor's output schema:
+{MeetingTodos.model_json_schema()}
+"""
+
+improver = Agent(model, output_type=PromptChange, instructions=IMPROVER_INSTRUCTIONS, capabilities=[creation])
+
+
+async def improve(failures: list[str]) -> PromptChange:
+    active = [c.name for c in creation.store.list_all() if c.status == "active" and not c.last_error]
+    prompt = (
+        f"Current instructions:\n{INSTRUCTIONS_PATH.read_text()}\n\n"
+        f"Active capabilities: {active or 'none'}\n\n"
+        "Eval failures:\n" + "\n".join(f"- {f}" for f in failures)
+    )
+    return (await improver.run(prompt)).output
+
+
+# ═══ 5. The loop ═══════════════════════════════════════════════════════════
 
 
 def reset() -> None:
@@ -478,14 +570,31 @@ async def evaluate(label: str) -> EvaluationReport:
 
 
 async def main(fresh: bool = False) -> None:
+    # Improvements accumulate: each run starts from the committed agent and builds on it.
     if fresh or not INSTRUCTIONS_PATH.exists():
         reset()
-    report = await evaluate("meeting_todos")
+    baseline = await evaluate("baseline")
+    report = baseline
 
-    failures = summarise_failures(report)
-    print(f"\n{len(failures)} failure(s)" if failures else "\nAll evals pass.")
-    for failure in failures:
-        print(f"  - {failure}")
+    for iteration in range(1, MAX_ITERATIONS + 1):
+        failures = summarise_failures(report)
+        if not failures:
+            print("\nAll evals pass.")
+            break
+
+        print(f"\n── Improving ({iteration}/{MAX_ITERATIONS}): {len(failures)} failure(s) ──")
+        change = await improve(failures)
+        INSTRUCTIONS_PATH.write_text(change.instructions)
+        print(f"Reason: {change.reason}")
+        for cap in creation.store.list_all():
+            print(f"  capability {cap.name} [{cap.status}]{' ERROR: ' + cap.last_error if cap.last_error else ''}")
+
+        report = await evaluate(f"iteration {iteration}")
+
+    print("\n══ Baseline → final ══")
+    report.print(baseline=baseline)
+    print(f"\nReview what changed:  git diff {HERE.relative_to(Path.cwd())}")
+    print("Commit to keep the improvements, or `git checkout` to throw them away.")
 
 
 if __name__ == "__main__":
