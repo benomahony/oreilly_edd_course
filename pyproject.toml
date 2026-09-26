@@ -11,7 +11,6 @@ dependencies = [
     "pydantic-evals>=2.50.0",
     "pydantic-settings>=2.12.0",
     "typer>=0.21.1",
-    "inquirerpy>=0.3.4",
     "pydantic-ai-harness>=0.35.0",
     "lexguard[pydantic-ai-harness,pydantic-evals]>=0.1.22",
     "pydantic-ai-slim[typesafe]>=2.50.0",

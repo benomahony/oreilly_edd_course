@@ -10,7 +10,8 @@ evals and runtime guardrails.
 ## Setup
 
 ```bash
-uv run edd setup   # installs deps, picks a provider (google / lmstudio)
+export GOOGLE_API_KEY=...                            # or PROVIDER=lmstudio for a local model
+uv run logfire auth && uv run logfire projects new   # optional: traces + online evals in your own Logfire
 ```
 
 ## Run

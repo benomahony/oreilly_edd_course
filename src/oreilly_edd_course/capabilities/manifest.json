@@ -20,6 +20,13 @@
       "class_name": "EnforceTodoVerb",
       "status": "active",
       "last_error": null
+    },
+    {
+      "name": "no_vague_todos",
+      "module_file": "no_vague_todos.py",
+      "class_name": "NoVagueTodos",
+      "status": "active",
+      "last_error": null
     }
   ]
 }

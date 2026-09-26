@@ -1,6 +1,6 @@
 """Send agent traces and online eval results to your Logfire project.
 
-Call `init_telemetry()` once at startup, before running agents. `edd setup` creates
+Call `init_telemetry()` once at startup, before running agents. `logfire projects new` creates
 the project and saves its write token to `.logfire/` (gitignored). Without a token,
 telemetry stays local and the example still runs.
 """
