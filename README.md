@@ -10,7 +10,7 @@ evals and runtime guardrails.
 ## Setup
 
 ```bash
-export GOOGLE_API_KEY=...                            # or PROVIDER=lmstudio for a local model
+export GOOGLE_API_KEY=...
 uv run logfire auth && uv run logfire projects new   # optional: traces + online evals in your own Logfire
 ```
 
@@ -22,17 +22,18 @@ uv run edd run --fresh  # start over from the naive prompt
 uv run edd obs          # open Logfire: traces + online eval results
 ```
 
-Everything lives in [`src/oreilly_edd_course/example.py`](src/oreilly_edd_course/example.py),
-in five sections:
+The example is split across three files in [`src/oreilly_edd_course/`](src/oreilly_edd_course/):
+[`example.py`](src/oreilly_edd_course/example.py) (system under test, improver, loop),
+[`evals.py`](src/oreilly_edd_course/evals.py) (golden dataset and evals) and
+[`models.py`](src/oreilly_edd_course/models.py) (the output models).
 
-1. **System under test** — `Todo` / `MeetingTodos` Pydantic models and the extraction agent,
+1. **System under test** — the extraction agent (output: `Todo` / `MeetingTodos` in `models.py`),
    with always-on lexguard guardrails:
    - `InputGuardrail` — hard-fails on prompt `Injection` in the transcript.
    - `OutputGuardrail(lexguard_guard(Leakage))` — self-reference, system-prompt leaks,
      injection echoes, placeholders → retry with lexguard's fix.
-   - `ENFORCE_TODO_WORDING = True` also enforces the per-todo lexicons at runtime.
-2. **Golden dataset** — three transcripts with expected outputs.
-3. **Evals**, cheapest first:
+2. **Golden dataset** (`evals.py`) — three transcripts with expected outputs.
+3. **Evals** (`evals.py`), cheapest first:
    | Layer | Evaluators |
    | --- | --- |
    | Schema | Pydantic validation (agent retries), `IsInstance` |
