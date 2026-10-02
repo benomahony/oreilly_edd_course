@@ -47,11 +47,7 @@ def obs() -> None:
 
 
 @app.command()
-def web(
-    fresh: Annotated[
-        bool, typer.Option("--fresh", help="Reset the agent to the naive prompt first.")
-    ] = False,
-) -> None:
+def web() -> None:
     """Run the agent as a web frontend."""
     if not os.environ.get("GOOGLE_API_KEY"):
         raise typer.BadParameter("Set GOOGLE_API_KEY first.")
