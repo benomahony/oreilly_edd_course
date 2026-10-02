@@ -44,10 +44,11 @@ from oreilly_edd_course.evals import NEVER_IN_OUTPUT, dataset, online_evals
 from oreilly_edd_course.models import MeetingTodos
 from oreilly_edd_course.telemetry import init_telemetry
 
-MODEL = "google:gemini-2.5-pro"
+MODEL = "google:gemini-3.8-flash"
 
 HERE = Path(__file__).parent
 MAX_ITERATIONS = 3
+
 # What gets improved — committed to git, so every improvement is a reviewable diff.
 INSTRUCTIONS_PATH = HERE / "instructions.md"
 CAPABILITIES_DIR = HERE / "capabilities"
@@ -198,17 +199,18 @@ improver = Agent(
 
 
 async def improve(failures: list[str]) -> PromptChange:
-    active = [
-        c.name
-        for c in capability_authoring.store.list_all()
-        if c.status == "active" and not c.last_error
-    ]
+    instructions, capabilities = await asyncio.gather(
+        asyncio.to_thread(INSTRUCTIONS_PATH.read_text),
+        asyncio.to_thread(capability_authoring.store.list_all),
+    )
+    active = [c.name for c in capabilities if c.status == "active" and not c.last_error]
     failure_list = "\n".join(f"- {f}" for f in failures)
     prompt = f"""\
 Current instructions:
-{INSTRUCTIONS_PATH.read_text()}
+{instructions}
 
-Active capabilities: {active or "none"}
+Active capabilities: 
+{active or "none"}
 
 Eval failures:
 {failure_list}"""
@@ -226,18 +228,21 @@ def reset() -> None:
 
 async def evaluate(label: str) -> EvaluationReport:
     report = await dataset.evaluate(extract_todos, name=label)
-    report.print(include_reasons=True)
+    report.print(include_reasons=True, include_input=True, include_output=True)
     return report
 
 
 async def main(fresh: bool = False) -> None:
-    # Improvements accumulate: each run starts from the committed agent and builds on it.
-    if fresh or not INSTRUCTIONS_PATH.exists():
-        reset()
+    # 1. Async check & reset
+    exists = await asyncio.to_thread(INSTRUCTIONS_PATH.exists)
+    if fresh or not exists:
+        await asyncio.to_thread(reset)
+
     baseline = await evaluate("baseline")
     report = baseline
 
     for iteration in range(1, MAX_ITERATIONS + 1):
+        # 2. If summarise_failures is heavy, offload it; otherwise keep inline
         failures = summarise_failures(report)
         if not failures:
             print("\nAll evals pass.")
@@ -247,18 +252,22 @@ async def main(fresh: bool = False) -> None:
             f"\n── Improving ({iteration}/{MAX_ITERATIONS}): {len(failures)} failure(s) ──"
         )
         change = await improve(failures)
-        _ = INSTRUCTIONS_PATH.write_text(change.instructions)
+
+        # 3. Offload file writing
+        _ = await asyncio.to_thread(INSTRUCTIONS_PATH.write_text, change.instructions)
         print(f"Reason: {change.reason}")
-        for cap in capability_authoring.store.list_all():
-            print(
-                f"  capability {cap.name} [{cap.status}]{' ERROR: ' + cap.last_error if cap.last_error else ''}"
-            )
+
+        # 4. Offload store listing
+        caps = await asyncio.to_thread(capability_authoring.store.list_all)
+        for cap in caps:
+            err = f" ERROR: {cap.last_error}" if cap.last_error else ""
+            print(f"  capability {cap.name} [{cap.status}]{err}")
 
         report = await evaluate(f"iteration {iteration}")
 
     print("\n══ Baseline → final ══")
     report.print(baseline=baseline)
-    print(f"\nReview what changed:  git diff {HERE.relative_to(Path.cwd())}")
+    print(f"\nReview what changed: git diff {HERE.relative_to(Path.cwd())}")
     print("Commit to keep the improvements, or `git checkout` to throw them away.")
 
 

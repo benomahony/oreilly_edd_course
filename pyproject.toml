@@ -14,6 +14,7 @@ dependencies = [
     "lexguard[pydantic-ai-harness,pydantic-evals]>=0.1.22",
     "pydantic-ai-slim[typesafe]>=2.50.0",
     "logfire>=5.1.1",
+    "uvicorn>=0.54.0",
 ]
 
 [project.scripts]

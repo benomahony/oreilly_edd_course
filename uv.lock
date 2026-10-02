@@ -1157,6 +1157,7 @@ dependencies = [
     { name = "pydantic-ai-slim", extra = ["typesafe"] },
     { name = "pydantic-evals" },
     { name = "typer" },
+    { name = "uvicorn" },
 ]
 
 [package.metadata]
@@ -1169,6 +1170,7 @@ requires-dist = [
     { name = "pydantic-ai-slim", extras = ["typesafe"], specifier = ">=2.50.0" },
     { name = "pydantic-evals", specifier = ">=2.50.0" },
     { name = "typer", specifier = ">=0.21.1" },
+    { name = "uvicorn", specifier = ">=0.54.0" },
 ]
 
 [[package]]

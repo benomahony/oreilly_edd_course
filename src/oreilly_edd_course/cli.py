@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 from typing import Annotated, cast
+import uvicorn
 
 import typer
 
@@ -43,6 +44,23 @@ def obs() -> None:
     credentials = cast(dict[str, str], json.loads(LOGFIRE_CREDENTIALS.read_text()))
     project_url = credentials["project_url"]
     _ = typer.launch(project_url)
+
+
+@app.command()
+def web(
+    fresh: Annotated[
+        bool, typer.Option("--fresh", help="Reset the agent to the naive prompt first.")
+    ] = False,
+) -> None:
+    """Run the agent as a web frontend."""
+    if not os.environ.get("GOOGLE_API_KEY"):
+        raise typer.BadParameter("Set GOOGLE_API_KEY first.")
+    # Imported here: example.py builds its agents at import time, so check the key first.
+    from oreilly_edd_course.example import extractor_agent
+    from oreilly_edd_course.telemetry import init_telemetry
+
+    init_telemetry(service_name="meeting-todos")
+    uvicorn.run(extractor_agent.to_web())
 
 
 if __name__ == "__main__":
