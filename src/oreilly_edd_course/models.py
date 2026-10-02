@@ -3,7 +3,7 @@
 from datetime import date
 from typing import Literal
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 
 class Todo(BaseModel):
@@ -18,10 +18,20 @@ class MeetingTodos(BaseModel):
     meeting_date: date
     attendees: list[str] = Field(description="Full names of everyone who spoke")
 
+    @model_validator(mode="after")
+    def validate_todo_dates(self) -> "MeetingTodos":
+        for todo in self.todos:
+            if todo.when < self.meeting_date:
+                raise ValueError(
+                    f"The due date for '{todo.what}' ({todo.when}) cannot be before the meeting date ({self.meeting_date})."
+                )
+        return self
+
     @field_validator("meeting_date")
     @classmethod
     def meeting_date_is_plausible(cls, v: date) -> date:
-        assert date(2020, 1, 1) <= v <= date(2030, 1, 1), (
-            f"{v} is not a plausible meeting date"
-        )
+        if not (date(2020, 1, 1) <= v <= date(2030, 1, 1)):
+            raise ValueError(
+                f"{v} is not a plausible meeting date, please use meeting data between 2020 and 2030"
+            )
         return v
